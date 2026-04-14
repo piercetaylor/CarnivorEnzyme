@@ -94,7 +94,7 @@ version = "0.1.0"
 description = "Structural atlas of convergently evolved digestive enzymes in carnivorous plants"
 requires-python = ">=3.11"
 license = {text = "MIT"}
-authors = [{name = "Pierce Taylor", email = "pmt5gt@missouri.edu"}]
+authors = [{name = "Pierce Taylor", email = ""}]
 dependencies = [
     "biopython>=1.84",
     "pandas>=2.2",
@@ -194,8 +194,8 @@ project:
   version: "0.1.0"
 
 ncbi:
-  email: "pmt5gt@missouri.edu"
-  api_key: ""   # Set for 10 req/s (vs 3 without)
+  email: ""     # Set via NCBI_EMAIL env var or directly here
+  api_key: ""   # Set via NCBI_API_KEY env var or directly here
 
 orthology:
   inflation: 1.5

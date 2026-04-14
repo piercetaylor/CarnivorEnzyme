@@ -7,6 +7,7 @@ Two rules:
      per-family combined.fa for MAFFT input.
 """
 
+import os
 from pathlib import Path
 
 
@@ -34,8 +35,8 @@ checkpoint fetch_all_sequences:
     output:
         seqdir=directory("results/sequences/"),
     params:
-        email=config["ncbi"]["email"],
-        api_key=config["ncbi"]["api_key"],
+        email=config["ncbi"]["email"] or os.environ.get("NCBI_EMAIL", ""),
+        api_key=config["ncbi"]["api_key"] or os.environ.get("NCBI_API_KEY", ""),
     conda:
         "../envs/bioinfo.yaml"
     log:

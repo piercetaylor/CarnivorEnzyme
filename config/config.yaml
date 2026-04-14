@@ -6,8 +6,8 @@ project:
   version: "0.1.0"
 
 ncbi:
-  email: "pmt5gt@missouri.edu"
-  api_key: ""   # Set for 10 req/s (vs 3 without)
+  email: ""     # Set via NCBI_EMAIL env var or directly here (required by Entrez)
+  api_key: ""   # Set via NCBI_API_KEY env var or directly here (enables 10 req/s)
 
 orthology:
   inflation: 1.5
