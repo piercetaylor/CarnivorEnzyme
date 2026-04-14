@@ -134,9 +134,9 @@ tier1:
         - TODO          # GENOME (PRJEB86749, Goh 2025 PLOS One): search for GH19 annotation
 
       Secale_cereale:
-        - CAA28969.1    # OUTGROUP VERIFIED: Rye seed chitinase (GH19), crystal structure PDB 4J0L
-                        # Gold standard structural reference for GH19 active site assignment
-                        # TODO: confirm this is the correct accession for the 4J0L sequence
+        - Q9FRV0        # OUTGROUP VERIFIED: Rye class I GH19 chitinase (CHIC_SECCE), 266 aa
+                        # Source sequence for PDB 4J0L (1.75 Å); DBREF in 4J0L confirms Q9FRV0
+                        # Gene RSCC; CAA28969.1 was wrong (27 aa fragment)
 
 
   # ============================================================
@@ -286,8 +286,9 @@ tier1:
         - CAA55895.1    # OUTGROUP VERIFIED: ribonuclease (RNase LE), 230 aa
 
       Vitis_vinifera:
-        - XP_002285005.1 # OUTGROUP: RNase T2 family protein (VIT_05s0049g00650), ~238 aa
-                        # TODO: verify this accession and length via NCBI Protein
+        - XP_002275271.1 # OUTGROUP VERIFIED: extracellular ribonuclease LE-like, 226 aa
+        - XP_010661083.1 # OUTGROUP VERIFIED: ribonuclease 1-like, 254 aa
+                        # XP_002285005.1 was wrong (92 aa fragment; replaced with these two)
 
 
   # ============================================================
@@ -310,16 +311,17 @@ tier1:
     subfamily: A1B
     experimental_pdb: null          # Kadek 2016 crystallized at 2.8Å but coords NOT deposited
     convergent_source: "Fukushima et al. 2017"
-    expected_length_aa: [380, 470]
+    expected_length_aa: [280, 650]  # Wide range: dionains ~300 aa, nepenthesins ~437 aa,
+                                    # phytepsins up to ~510 aa, Cephalotus AP 612 aa
     accessions:
 
       # --- Nepenthes (canonical nepenthesins) ---
       Nepenthes_gracilis:
-        - BAC16780.1    # VERIFIED: Nepenthesin I (Nep I), 437 aa; Athauda et al. 2004 ANCHOR
-                        # NOTE: AB114914 is the mRNA/CDS nucleotide accession; BAC16780.1 is the protein
-        - BAC16781.1    # VERIFIED: Nepenthesin II (Nep II), 437 aa; Athauda et al. 2004 ANCHOR
-                        # NOTE: AB114915 is the mRNA/CDS nucleotide accession; BAC16781.1 is the protein
-        - GMG99884.1    # GENOME: Nepgr_001724, neprosin-related/AP, 467 aa (Saul 2023)
+        - BAD07474.1    # VERIFIED: Nepenthesin I (Nep I), 437 aa; Athauda et al. 2004 ANCHOR
+                        # Protein accession for AB114914 mRNA (elink nuccore→protein: 41016421)
+        - BAD07475.1    # VERIFIED: Nepenthesin II (Nep II), 438 aa; Athauda et al. 2004 ANCHOR
+                        # Protein accession for AB114915 mRNA
+                        # NOTE: GMG99884.1 removed from here (kept only in neprosins — DUF239 family)
 
       Nepenthes_alata:
         - BBF98357.1    # VERIFIED: Nepenthesin III, 442 aa; Kadek et al. 2016
@@ -389,13 +391,12 @@ tier1:
         - XP_019070220.2 # OUTGROUP VERIFIED: ASPARTIC PROTEASE IN GUARD CELL 1-like, 455 aa
 
       Hordeum_vulgare:
-        - M0W9B2        # OUTGROUP VERIFIED: HvNEP-1 barley nepenthesin-like A1B, 427 aa
-                        # Best-characterized non-carnivorous nepenthesin-subfamily member
-                        # Published: Frontiers in Plant Science 2021; has canonical PSI insert
-                        # Key use: outgroup for A1B subfamily nepenthesin phylogeny + FoldX ref
-        - XP_045019345.1 # OUTGROUP: Hordeum nucellin-like (no PSI insert), 402 aa
-                        # Contrast: nucellin lacks the PSI domain present in nepenthesins
-                        # TODO: verify this is the correct nucellin accession for Hordeum
+        - P42210        # OUTGROUP VERIFIED: HvPhytepsin (ASPR_HORVU), 508 aa — A1B phytepsin
+                        # UniProt Swiss-Prot; well-characterized barley vacuolar A1B aspartic protease
+                        # M0W9B2 (HvNEP-1) was inaccessible (empty UniProt response, accession obsolete)
+                        # P42210 is the best available barley A1B outgroup
+        - XP_045019345.1 # OUTGROUP: Hordeum nucellin-like (no PSI insert), 393 aa
+                        # Useful as structural contrast: nucellin lacks the PSI domain of nepenthesins
 
       Triticum_aestivum:
         - XP_037427783.1 # OUTGROUP: wheat nepenthesin-like aspartic protease, 437 aa

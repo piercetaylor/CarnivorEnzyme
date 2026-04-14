@@ -38,9 +38,13 @@ desktop.ini
 CLAUDE.md
 CLAUDE.md.bak
 COPILOT.md
+AGENTS.md
 *.claude-instructions
 *-claude-*.txt
 *-copilot-*.txt
+
+# Literature reviews and research notes (Claude-generated, keep locally)
+literature_review/
 
 # GitHub Copilot
 .github/copilot-instructions.md
@@ -85,3 +89,9 @@ logs/
 *.tmp
 *.bak
 *.orig
+
+# YAML temp files (from editor autosave)
+*.yaml.tmp.*
+
+# Hellbender module list (local reference, not needed in repo)
+hellbenderModules.txt
