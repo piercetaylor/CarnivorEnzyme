@@ -1,0 +1,19 @@
+# Snakemake SLURM profile for Hellbender HPC.
+executor: slurm
+default-resources:
+  slurm_partition: General
+  mem_mb: 8000
+  runtime: 120          # minutes
+  cpus_per_task: 4
+set-resources:
+  predict_af3:
+    slurm_partition: gpu
+    slurm_extra: "'--gres=gpu:1'"
+    mem_mb: 64000
+    runtime: 480
+  run_foldx_scan:
+    mem_mb: 4000
+    runtime: 60
+  run_docking:
+    mem_mb: 4000
+    runtime: 30

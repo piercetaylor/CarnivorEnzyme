@@ -1,0 +1,13 @@
+name: evcouplings
+channels: [conda-forge, bioconda]
+dependencies:
+  - python=3.11
+  - hmmer=3.4
+  - plmc
+  - click
+  - pandas
+  - numpy
+  - matplotlib
+  - pip
+  - pip:
+    - evcouplings

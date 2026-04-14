@@ -1,0 +1,12 @@
+name: structure
+channels: [conda-forge, bioconda]
+dependencies:
+  - foldseek
+  - dssp=4.4.0
+  - biopython=1.84
+  - click
+  - pandas
+  - numpy
+  - pip
+  - pip:
+    - chai_lab>=0.6.1

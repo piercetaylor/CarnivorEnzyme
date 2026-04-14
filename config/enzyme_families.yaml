@@ -1,0 +1,35 @@
+# Enzyme families and known accessions.
+# Populate accessions before running the pipeline.
+
+tier1:
+  chitinases_gh19:
+    cazy: GH19
+    convergent_source: "Fukushima et al. 2017 Fig. 3a"
+    accessions: {}
+
+  purple_acid_phosphatase:
+    convergent_source: "Fukushima et al. 2017; Nishimura et al. 2014"
+    accessions: {}
+
+  rnase_t2:
+    convergent_source: "Fukushima et al. 2017"
+    accessions: {}
+
+  nepenthesins:
+    merops: A01.073
+    subfamily: A1B
+    experimental_pdb: null
+    accessions:
+      Nepenthes_gracilis: ["AB114914", "AB114915"]
+
+  neprosins:
+    merops: G03.001
+    experimental_pdb: ["7ZVA", "7ZVB", "7ZVC", "7ZU8"]
+    accessions: {}
+
+tier2:
+  cysteine_proteases: {accessions: {}}
+  thaumatin_like: {accessions: {}}
+  glucanases_gh17: {accessions: {}}
+  lipid_transfer: {accessions: {}}
+  esterases: {accessions: {}}

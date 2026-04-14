@@ -1,0 +1,47 @@
+name: carnivorenzyme
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.11
+  - snakemake=8.20
+  # Bioinformatics
+  - mafft=7.525
+  - iqtree=2.3.6
+  - orthofinder=2.5.5
+  - trimal=1.4.1
+  - diamond=2.1
+  - blast=2.16
+  - hmmer=3.4
+  # Structure
+  - foldseek
+  - dssp=4.4.0
+  - openbabel=3.1.1
+  # Electrostatics
+  - apbs=3.4.1
+  - pdb2pqr=3.6
+  # Expression
+  - salmon=1.10.3
+  # Python core
+  - biopython=1.84
+  - pandas=2.2
+  - numpy=1.26
+  - scipy=1.13
+  - matplotlib=3.9
+  - seaborn=0.13
+  - scikit-learn=1.5
+  - click
+  - pyyaml
+  - tqdm
+  - requests
+  - pytest
+  - ruff
+  - pip
+  - pip:
+    - meeko>=0.5
+    - vina>=1.2.5
+    - prodigy-prot
+    - evcouplings
+    - streamlit>=1.30
+    - py3Dmol

@@ -1,0 +1,29 @@
+# Pipeline outputs (large, reproducible)
+results/
+resources/sequences/
+resources/expression/
+.snakemake/
+
+# FoldX license (never commit)
+foldx_license.txt
+rotabase.txt
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+dist/
+
+# Conda
+*.conda
+*.tar.bz2
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp

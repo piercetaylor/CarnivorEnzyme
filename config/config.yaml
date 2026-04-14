@@ -1,0 +1,63 @@
+# CarnivorEnzyme pipeline configuration.
+# See CLAUDE.md for full documentation.
+
+project:
+  name: CarnivorEnzyme
+  version: "0.1.0"
+
+ncbi:
+  email: "pmt5gt@missouri.edu"
+  api_key: ""   # Set for 10 req/s (vs 3 without)
+
+orthology:
+  inflation: 1.5
+  min_species: 3
+
+alignment:
+  method: linsi
+  trim: automated1
+
+phylogeny:
+  model: MFP
+  bootstrap: 1000
+
+convergence:
+  posterior_threshold: 0.8
+
+structure:
+  primary_predictor: alphafold3
+  fallback_predictor: chai1
+  af3_module: "alphafold3/3.0.1"    # Hellbender module name
+  n_seeds: 5
+  plddt_exclude: 50
+
+foldx:
+  repair_rounds: 5
+  temperature: 298
+  ddg_destabilizing: 1.0
+  ddg_stabilizing: -0.5
+
+evcouplings:
+  min_neff: 500           # Minimum effective sequences for reliable DCA
+  plmc_iterations: 100
+
+docking:
+  exhaustiveness: 32
+  num_modes: 20
+  box_padding: 10
+
+electrostatics:
+  ph_values: [2.5, 3.5, 5.0]
+  grid_spacing: 0.5
+
+expression:
+  datasets:
+    - name: N_gracilis
+      sra: PRJDB8591
+      genome: GCA_030504385.1
+    - name: Cephalotus
+      sra: PRJDB4470
+      genome: GCA_001941015.1
+    - name: Dionaea
+      sra: PRJEB12493
+      genome: GCA_032404045.1

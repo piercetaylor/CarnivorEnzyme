@@ -1,0 +1,11 @@
+name: bioinfo
+channels: [conda-forge, bioconda]
+dependencies:
+  - mafft=7.525
+  - iqtree=2.3.6
+  - orthofinder=2.5.5
+  - trimal=1.4.1
+  - biopython=1.84
+  - ete3
+  - click
+  - pandas
