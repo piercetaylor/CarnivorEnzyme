@@ -95,3 +95,6 @@ logs/
 
 # Hellbender module list (local reference, not needed in repo)
 hellbenderModules.txt
+
+#Progress.md
+PROGRESS.md
