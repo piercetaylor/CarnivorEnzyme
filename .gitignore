@@ -33,10 +33,14 @@ desktop.ini
 *.swo
 *~
 
-# Claude Code
+# Claude Code / instruction files (keep locally, don't commit)
 .claude/
+CLAUDE.md
 CLAUDE.md.bak
-*.md
+COPILOT.md
+*.claude-instructions
+*-claude-*.txt
+*-copilot-*.txt
 
 # GitHub Copilot
 .github/copilot-instructions.md
