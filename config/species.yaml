@@ -1,0 +1,347 @@
+# Species metadata for CarnivorEnzyme pipeline.
+# Used by: retrieve.smk, orthology.smk, convergence.smk, expression.smk
+#
+# Fields:
+#   code:           short identifier used as wildcard in Snakemake rules and filenames
+#   taxid:          NCBI taxonomy ID
+#   genome:         NCBI assembly accession or BioProject ("transcriptome_only", "none")
+#   pitcher_pH:     measured or estimated fluid pH (null = not applicable or unknown)
+#   clade/order:    angiosperm order
+#   trap:           trap morphology
+#   carnivory_origin: integer grouping independent origins (1=Caryophyllales, 4=Oxalidales, etc.)
+#   expression_sra: SRA BioProject accession for RNA-seq (null if not used)
+#   genome_source:  citation for genome assembly
+#   tier:           1=core pipeline, 2=extended atlas
+#
+# CARNIVORY ORIGINS (independent evolutionary events):
+#   1 — Caryophyllales: Nepenthes, Drosera, Dionaea, Aldrovanda, Drosophyllum (same order)
+#   4 — Oxalidales: Cephalotus
+#   5 — Ericales: Sarracenia, Darlingtonia, Heliamphora (Sarraceniaceae family)
+#   6 — Lamiales: Utricularia, Genlisea, Pinguicula (Lentibulariaceae)
+#   7 — Lamiales: Byblis (Byblidaceae; distinct from Lentibulariaceae)
+#   NOTE: Roridula (Ericales, Roridulaceae) excluded — lacks endogenous digestive enzymes
+
+# ============================================================
+# TIER 1: CORE PIPELINE SPECIES
+# ============================================================
+
+carnivorous_species:
+
+  # --- Nepenthes (Caryophyllales, pitfall pitcher) ---
+  Nepenthes_gracilis:
+    taxid: 4972
+    code: Ngra
+    genome: GCA_030504385.1        # Saul et al. 2023, Nature Plants (decaploid, 10x)
+    pitcher_pH: 2.5
+    clade: Caryophyllales
+    order: Caryophyllales
+    trap: pitfall_pitcher
+    carnivory_origin: 1
+    expression_sra: PRJDB8591      # Saul et al. 2023
+    genome_source: "Saul et al. 2023, Nature Plants"
+    tier: 1
+
+  Nepenthes_alata:
+    taxid: 221121
+    code: Nala
+    genome: JAOVVI000000000        # Tarnita et al. 2023, PMC10662931 (17-genome paper)
+    pitcher_pH: 3.5
+    clade: Caryophyllales
+    order: Caryophyllales
+    trap: pitfall_pitcher
+    carnivory_origin: 1
+    expression_sra: null
+    genome_source: "Tarnita et al. 2023, genome sequences of 17 carnivorous plants (PMC10662931)"
+    tier: 1
+    notes: "Well-characterized enzyme secretome (Rottloff et al. 2016); many verified accessions"
+
+  Nepenthes_mirabilis:
+    taxid: 70380
+    code: Nmir
+    genome: PRJEB86749             # EMBL-EBI; Goh et al. 2025, PLOS One — high quality assembly
+    pitcher_pH: 3.0
+    clade: Caryophyllales
+    order: Caryophyllales
+    trap: pitfall_pitcher
+    carnivory_origin: 1
+    expression_sra: null
+    genome_source: "Goh et al. 2025, PLOS One (common swamp pitcher plant genome)"
+    tier: 1
+
+  # --- Drosera (Caryophyllales, sticky trap) ---
+  Drosera_capensis:
+    taxid: 3563
+    code: Dcap
+    genome: draft                  # Draft genome; Butts et al. 2016 used transcriptome
+    pitcher_pH: null
+    clade: Caryophyllales
+    order: Caryophyllales
+    trap: sticky_flypaper
+    carnivory_origin: 2
+    expression_sra: null
+    genome_source: "Butts et al. 2016, Proteins (transcriptome/partial genome)"
+    tier: 1
+
+  Drosera_adelae:
+    taxid: 131513
+    code: Dade
+    genome: none
+    pitcher_pH: null
+    clade: Caryophyllales
+    order: Caryophyllales
+    trap: sticky_flypaper
+    carnivory_origin: 2
+    expression_sra: null
+    genome_source: null
+    tier: 1
+    notes: "RNase T2 (BAE16663.1, BAE44977.1) and chitinase (Yoneda 2025) experimentally characterized"
+
+  Drosera_spatulata:
+    taxid: 36895
+    code: Dspa
+    genome: JAOVYX000000000        # Tarnita et al. 2023 (17-genome paper)
+    pitcher_pH: null
+    clade: Caryophyllales
+    order: Caryophyllales
+    trap: sticky_flypaper
+    carnivory_origin: 2
+    expression_sra: null
+    genome_source: "Tarnita et al. 2023, PMC10662931"
+    tier: 2
+
+  Drosera_binata:
+    taxid: 3561
+    code: Dbin
+    genome: none
+    pitcher_pH: null
+    clade: Caryophyllales
+    order: Caryophyllales
+    trap: sticky_flypaper
+    carnivory_origin: 2
+    expression_sra: null
+    genome_source: null
+    tier: 2
+    notes: "DbChitI-3 acidic chitinase characterized 2025 (Planta), active at pH 2.5"
+
+  # --- Dionaea (Caryophyllales, snap trap) ---
+  Dionaea_muscipula:
+    taxid: 3554
+    code: Dmus
+    genome: GCA_032404045.1        # Palfalvi et al. 2020, Genome Research (tetraploid)
+    pitcher_pH: null               # Snap trap; fluid pH ~3.5 post-capture
+    clade: Caryophyllales
+    order: Caryophyllales
+    trap: snap_trap
+    carnivory_origin: 3
+    expression_sra: PRJEB12493     # Bemm et al. 2016
+    genome_source: "Palfalvi et al. 2020, Genome Research"
+    tier: 1
+
+  # --- Aldrovanda (Caryophyllales, aquatic snap trap) ---
+  Aldrovanda_vesiculosa:
+    taxid: 3558
+    code: Aves
+    genome: PRJNA918534            # BioProject; Adamec et al. 2023; 20% TE content
+    pitcher_pH: null
+    clade: Caryophyllales
+    order: Caryophyllales
+    trap: snap_trap
+    carnivory_origin: 3            # Sister to Dionaea; shared snap-trap origin
+    expression_sra: null
+    genome_source: "Adamec et al. 2023 (BioProject PRJNA918534)"
+    tier: 2
+
+  # --- Cephalotus (Oxalidales — INDEPENDENT ORIGIN) ---
+  Cephalotus_follicularis:
+    taxid: 3547
+    code: Cfol
+    genome: GCA_001941015.1        # Fukushima et al. 2017, Nature Ecology & Evolution
+    pitcher_pH: 3.5
+    clade: Oxalidales
+    order: Oxalidales
+    trap: pitfall_pitcher
+    carnivory_origin: 4
+    expression_sra: PRJDB4470      # Fukushima et al. 2017
+    genome_source: "Fukushima et al. 2017, Nature Ecology & Evolution"
+    tier: 1
+
+  # --- Sarraceniaceae (Ericales — INDEPENDENT ORIGIN; 3 genera) ---
+  Sarracenia_purpurea:
+    taxid: 4126
+    code: Spur
+    genome: JAULLE000000000        # Tarnita et al. 2023 (17-genome paper)
+    pitcher_pH: 4.5
+    clade: Ericales
+    order: Ericales
+    trap: pitfall_pitcher
+    carnivory_origin: 5
+    expression_sra: null
+    genome_source: "Tarnita et al. 2023, PMC10662931"
+    tier: 1
+
+  Sarracenia_alata:
+    taxid: 153370
+    code: Sala
+    genome: JAPEKV000000000        # Tarnita et al. 2023
+    pitcher_pH: 4.0
+    clade: Ericales
+    order: Ericales
+    trap: pitfall_pitcher
+    carnivory_origin: 5
+    expression_sra: null
+    genome_source: "Tarnita et al. 2023, PMC10662931"
+    tier: 2
+
+  Darlingtonia_californica:
+    taxid: 152512
+    code: Dcal
+    genome: JAUBWS000000000        # Tarnita et al. 2023
+    pitcher_pH: 5.0                # Cobra lily; known to have high-pH fluid (~5.0+)
+    clade: Ericales
+    order: Ericales
+    trap: pitfall_pitcher
+    carnivory_origin: 5
+    expression_sra: null
+    genome_source: "Tarnita et al. 2023, PMC10662931"
+    tier: 2
+    notes: "Only species in genus Darlingtonia; cobra lily; westernmost Sarraceniaceae"
+
+  Heliamphora_ciliata:
+    taxid: 282588
+    code: Hcil
+    genome: JAUMHN000000000        # Tarnita et al. 2023
+    pitcher_pH: 5.5                # South American pitcher; least acidic Sarraceniaceae
+    clade: Ericales
+    order: Ericales
+    trap: pitfall_pitcher
+    carnivory_origin: 5
+    expression_sra: null
+    genome_source: "Tarnita et al. 2023, PMC10662931"
+    tier: 2
+    notes: "Useful for pH gradient analysis within Sarraceniaceae (5.5 vs Darlingtonia 5.0 vs Sarracenia 4.0-4.5)"
+
+  # --- Lentibulariaceae (Lamiales — INDEPENDENT ORIGIN) ---
+  Utricularia_gibba:
+    taxid: 200816
+    code: Ugib
+    genome: GCA_002189035.1        # Lan et al. 2017
+    pitcher_pH: null
+    clade: Lamiales
+    order: Lamiales
+    trap: suction_bladder
+    carnivory_origin: 6
+    expression_sra: null
+    genome_source: "Lan et al. 2017"
+    tier: 1
+
+  Pinguicula_moranensis:
+    taxid: 174571
+    code: Pmor
+    genome: JAOWBN000000000        # Tarnita et al. 2023
+    pitcher_pH: null
+    clade: Lamiales
+    order: Lamiales
+    trap: sticky_flypaper
+    carnivory_origin: 6
+    expression_sra: null
+    genome_source: "Tarnita et al. 2023, PMC10662931"
+    tier: 2
+
+  Pinguicula_vulgaris:
+    taxid: 38533
+    code: Pvul
+    genome: partial
+    pitcher_pH: null
+    clade: Lamiales
+    order: Lamiales
+    trap: sticky_flypaper
+    carnivory_origin: 6
+    expression_sra: null
+    genome_source: null
+    tier: 2
+
+  # --- Byblidaceae (Lamiales — SEPARATE ORIGIN from Lentibulariaceae) ---
+  Byblis_filifolia:
+    taxid: 213638
+    code: Bfil
+    genome: none                   # No published genome as of April 2026
+    pitcher_pH: null
+    clade: Lamiales
+    order: Lamiales
+    trap: sticky_flypaper
+    carnivory_origin: 7            # Byblidaceae separate from Lentibulariaceae
+    expression_sra: null
+    genome_source: null
+    tier: 2
+    notes: "2025 paper (Pavlovič, Plant Biology): secretes digestive enzymes independently of jasmonates. Phylogenetically distinct from other Lamiales carnivores."
+
+# ============================================================
+# OUTGROUP SPECIES (non-carnivorous)
+# ============================================================
+
+outgroup_species:
+
+  # --- Standard phylogenetic outgroups ---
+  Arabidopsis_thaliana:
+    taxid: 3702
+    code: Atha
+    genome: GCF_000001735.4        # TAIR10
+    pitcher_pH: null
+    clade: Brassicales
+    order: Brassicales
+    trap: null
+    carnivorous: false
+    expression_sra: null
+    tier: 1
+
+  Vitis_vinifera:
+    taxid: 29760
+    code: Vvin
+    genome: GCF_000003745.3        # 12X
+    pitcher_pH: null
+    clade: Vitales
+    order: Vitales
+    trap: null
+    carnivorous: false
+    expression_sra: null
+    tier: 1
+
+  Solanum_lycopersicum:
+    taxid: 4081
+    code: Slyo
+    genome: GCF_000188115.5        # iTAG 4.0
+    pitcher_pH: null
+    clade: Solanales
+    order: Solanales
+    trap: null
+    carnivorous: false
+    expression_sra: null
+    tier: 1
+
+  # --- Family-specific outgroups for nepenthesin/aspartic protease alignment ---
+  Hordeum_vulgare:
+    taxid: 4513
+    code: Hvul
+    genome: GCF_904849725.1        # Morex V3 barley reference genome
+    pitcher_pH: null
+    clade: Poales
+    order: Poales
+    trap: null
+    carnivorous: false
+    expression_sra: null
+    tier: 1
+    notes: "HvNEP-1 (UniProt M0W9B2) is a characterized nepenthesin-like aspartic protease — ideal outgroup for nepenthesin A1B alignment. Also has nucellin (no PSI insert) for structural comparison."
+
+  # --- GH19 chitinase structural reference ---
+  Secale_cereale:
+    taxid: 4550
+    code: Scer
+    genome: GCA_002008725.1        # Rye genome
+    pitcher_pH: null
+    clade: Poales
+    order: Poales
+    trap: null
+    carnivorous: false
+    expression_sra: null
+    tier: 1
+    notes: "Rye GH19 chitinase has a crystal structure (PDB 4J0L at 1.75 Å resolution) — gold standard reference for GH19 fold validation and active site assignment."

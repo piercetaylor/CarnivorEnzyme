@@ -1,0 +1,73 @@
+# Docking substrates for CarnivorEnzyme pipeline.
+# Used by: prepare_docking.py, run_docking.py, docking.smk
+#
+# Fields:
+#   for_family:    enzyme family key from enzyme_families.yaml
+#   smiles:        canonical SMILES string (null if generating from sequence with Meeko)
+#   pubchem_cid:   PubChem CID for ligand retrieval (alternative to SMILES)
+#   n_residues:    residue count (for peptide ligands)
+#   mol_weight:    approximate molecular weight in Da
+#   source:        literature citation or database source
+#   notes:         preparation instructions or caveats
+
+substrates:
+
+  # --- Neprosins (glutamic peptidase G3) ---
+  PQPQLPYP:
+    for_family: neprosins
+    description: "Gliadin immunodominant octapeptide (Pro-Gln-Pro-Gln-Leu-Pro-Tyr-Pro)"
+    smiles: "O=C([C@@H](CC1=CC=C(O)C=C1)NC(=O)[C@@H]2CCCN2C(=O)[C@@H](CCC(N)=O)NC(=O)[C@@H]3CCCN3C(=O)[C@@H](CCC(N)=O)NC(=O)[C@@H]4CCCN4)O"
+    n_residues: 8
+    mol_weight: 962
+    source: "Schräder et al. 2017, Mol Cell Proteomics 16:1162; immunodominant epitope from gliadin 33-mer"
+    notes: "Neprosin cleaves after proline; verify pose places Pro residues near E188/E297 (7ZVC numbering). 7 amide bonds — at Vina's reliable limit for flexible ligand."
+
+  # --- Chitinases (GH19) ---
+  GlcNAc4:
+    for_family: chitinases_gh19
+    description: "(GlcNAc)4 — chitin tetramer (N-acetylglucosamine tetrasaccharide)"
+    smiles: null
+    pubchem_cid: 23697                # (GlcNAc)4; verify CID before use
+    mol_weight: 812
+    source: "Standard chitinase substrate; used in Tews et al. 1997, Science 277:1625"
+    notes: "Download SDF from PubChem CID 23697 and convert to 3D PDB with OpenBabel: obabel -isdf -opdb --gen3d. Alternatively use GlcNAc2 (CID 10985) as minimal substrate."
+
+  # --- RNase T2 (S-like RNases) ---
+  ApA:
+    for_family: rnase_t2
+    description: "Adenylyl(3'→5')adenosine — RNA dinucleotide (ApA)"
+    smiles: null
+    pubchem_cid: 72306                # ApA dinucleotide
+    mol_weight: 595
+    source: "MacLachlan & Setterfield 1977; standard minimal substrate for S-like RNases"
+    notes: "AutoDock Vina has limited accuracy for nucleotides; supplement with Boltz-2 co-folding. Download from PubChem CID 72306. If unavailable, use adenosine-3',5'-cyclic monophosphate (cAMP, CID 5757) as alternative."
+
+  # --- Purple acid phosphatases (PAPs) ---
+  pNPP:
+    for_family: purple_acid_phosphatase
+    description: "p-Nitrophenyl phosphate (para-nitrophenyl phosphate)"
+    smiles: "O=P(O)(O)Oc1ccc([N+](=O)[O-])cc1"
+    pubchem_cid: 944                  # pNPP
+    mol_weight: 219
+    source: "Standard chromogenic PAP substrate; used in Nishimura et al. 2014"
+    notes: "Small rigid molecule — highly reliable with Vina. Use as primary docking benchmark. Active site contains binuclear metal center (Fe-Zn or Fe-Mn); include metal parameters in receptor preparation."
+
+  # --- Nepenthesins / droserasins (aspartic proteases A1B) ---
+  VHLTPEEK:
+    for_family: nepenthesins
+    description: "Hemoglobin alpha-chain N-terminal octapeptide (Val-His-Leu-Thr-Pro-Glu-Glu-Lys)"
+    smiles: null     # Generate from sequence using Meeko or PepFold3 + energy minimization
+    n_residues: 8
+    mol_weight: 940
+    source: "Athauda et al. 2004, Biochem J 381:295 — used to characterize nepenthesin specificity"
+    notes: "Build 3D structure from sequence: use Meeko mk_prepare_ligand.py with extended conformation as starting geometry. Aspartic proteases cleave between hydrophobic residues; expect binding at Leu-Thr or Thr-Pro bond."
+
+  # --- Additional substrate for nepenthesins (for cross-validation) ---
+  Lys_bradykinin:
+    for_family: nepenthesins
+    description: "Lys-bradykinin nonapeptide (Lys-Arg-Pro-Pro-Gly-Phe-Ser-Pro-Phe-Arg)"
+    smiles: null
+    n_residues: 10
+    mol_weight: 1188
+    source: "Takahashi et al. 2011, FEBS Lett; used to test nepenthesin substrate range"
+    notes: "10 residues — approaching Vina's flexible-ligand limit. Use only if PQPQLPYP validation passes. Generate 3D with Meeko."

@@ -6,24 +6,25 @@ channels:
 dependencies:
   - python=3.11
   - snakemake=8.20
-  # Bioinformatics
+  # --- Bioinformatics ---
   - mafft=7.525
-  - iqtree=2.3.6
+  - iqtree>=3.0.0            # Updated: IQ-TREE 3 (2025) — improved ASR concordance factors
   - orthofinder=2.5.5
   - trimal=1.4.1
-  - diamond=2.1
-  - blast=2.16
-  - hmmer=3.4
-  # Structure
-  - foldseek
-  - dssp=4.4.0
-  - openbabel=3.1.1
-  # Electrostatics
-  - apbs=3.4.1
-  - pdb2pqr=3.6
-  # Expression
-  - salmon=1.10.3
-  # Python core
+  - diamond=2.1              # OrthoFinder DIAMOND backend
+  - blast=2.16               # OrthoFinder fallback
+  - hmmer=3.4                # jackhmmer for EVcouplings MSA generation
+  - plmc                     # C implementation of pseudolikelihood DCA (EVcouplings backend)
+  # --- Structure ---
+  - foldseek>=9              # All-vs-all structural search (3Di+AA alphabet)
+  - dssp=4.4.0               # Secondary structure + SASA from PDB coordinates
+  - openbabel=3.1.1          # Ligand format conversion for docking
+  # --- Electrostatics ---
+  - apbs=3.4.1               # Poisson-Boltzmann electrostatics
+  - pdb2pqr=3.6              # Protonation state assignment with PROPKA
+  # --- Expression ---
+  - salmon=1.10.3            # Alignment-free RNA-seq quantification
+  # --- Python core ---
   - biopython=1.84
   - pandas=2.2
   - numpy=1.26
@@ -35,13 +36,20 @@ dependencies:
   - pyyaml
   - tqdm
   - requests
+  - gemmi                    # CIF/mmCIF parsing for AlphaFold3 output
+  - ete3                     # Phylogenetic tree manipulation
   - pytest
   - ruff
   - pip
   - pip:
-    - meeko>=0.5
-    - vina>=1.2.5
-    - prodigy-prot
-    - evcouplings
-    - streamlit>=1.30
-    - py3Dmol
+    - chai_lab>=0.6.1        # Structure prediction fallback (Apache 2.0, pip-only)
+    - boltz>=2.0             # NEW: Boltz-2 (MIT) — RNA-protein + binding affinity prediction
+    - piqtree>=0.1           # NEW: IQ-TREE 3 Python bindings for tree parsing in scripts
+    - meeko>=0.5             # Docking ligand preparation (PDBQT)
+    - vina>=1.2.5            # AutoDock Vina Python bindings
+    - prodigy-prot           # Protein-protein interface binding affinity
+    - evcouplings            # EVcouplings/EVmutation unified package (supersedes EVmutation)
+    - esm                    # ESM-1v zero-shot fitness prediction (fallback for low-Neff)
+    - streamlit>=1.30        # Web interface
+    - py3Dmol                # 3D structure viewer for Streamlit
+    - ABCFold>=1.0           # Multi-predictor comparison (AF3 + Chai-1 + Boltz standardized I/O)

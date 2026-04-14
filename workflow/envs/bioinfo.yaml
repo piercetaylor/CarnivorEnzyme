@@ -1,11 +1,18 @@
 name: bioinfo
-channels: [conda-forge, bioconda]
+channels:
+  - conda-forge
+  - bioconda
 dependencies:
   - mafft=7.525
-  - iqtree=2.3.6
+  - iqtree>=3.0.0      # IQ-TREE 3 (2025) — improved ASR concordance factors; binary is iqtree3
   - orthofinder=2.5.5
   - trimal=1.4.1
   - biopython=1.84
   - ete3
   - click
+  - requests
   - pandas
+  - pyyaml
+  - pip
+  - pip:
+    - piqtree>=0.1     # IQ-TREE 3 Python bindings for tree manipulation in detect_convergence.py

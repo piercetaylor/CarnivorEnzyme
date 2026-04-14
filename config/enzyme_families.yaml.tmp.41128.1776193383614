@@ -315,10 +315,8 @@ tier1:
 
       # --- Nepenthes (canonical nepenthesins) ---
       Nepenthes_gracilis:
-        - BAC16780.1    # VERIFIED: Nepenthesin I (Nep I), 437 aa; Athauda et al. 2004 ANCHOR
-                        # NOTE: AB114914 is the mRNA/CDS nucleotide accession; BAC16780.1 is the protein
-        - BAC16781.1    # VERIFIED: Nepenthesin II (Nep II), 437 aa; Athauda et al. 2004 ANCHOR
-                        # NOTE: AB114915 is the mRNA/CDS nucleotide accession; BAC16781.1 is the protein
+        - AB114914      # VERIFIED: Nepenthesin I (Nep I), 437 aa; Athauda et al. 2004 ANCHOR
+        - AB114915      # VERIFIED: Nepenthesin II (Nep II), 437 aa; Athauda et al. 2004 ANCHOR
         - GMG99884.1    # GENOME: Nepgr_001724, neprosin-related/AP, 467 aa (Saul 2023)
 
       Nepenthes_alata:
@@ -334,50 +332,14 @@ tier1:
         - KAL9250314.1  # GENOME: ASPARTIC PROTEASE IN GUARD CELL 1-like, D. capensis
                         # NOTE: guard-cell AP may not be the digestive droserasin;
                         # TODO: cross-reference with Butts 2016 supplementary to get droserasin-1/2
-                        # Butts 2016 (Proteins 84:1517) Supplementary Table S1 has accessions
 
       Drosera_rotundifolia:
         - TODO          # Search GAB (D. rotundifolia genome) for aspartic protease A1B
-                        # Query: txid[1309783][Organism] AND aspartic_protease[All Fields]
-
-      Drosera_spatulata:
-        - TODO          # GENOME (JAOVYX000000000, Tarnita 2023): search for A1B aspartic protease
 
       # --- Dionaea (dionain) ---
       Dionaea_muscipula:
         - A0A0E3GLN3    # VERIFIED UniProt: Dionain-1, aspartic protease; Palfalvi 2020
         - A0A0E3M338    # VERIFIED UniProt: Dionain-3, aspartic protease; Palfalvi 2020
-
-      # --- Aldrovanda (origin 3, sister to Dionaea) ---
-      Aldrovanda_vesiculosa:
-        - TODO          # GENOME (PRJNA918534): search for A1B aspartic protease
-                        # Expect droserasin/dionain-like given sister relationship to Dionaea
-
-      # --- Cephalotus ---
-      Cephalotus_follicularis:
-        - GAV28673.1    # GENOME: eukaryotic aspartyl protease, 461 aa (Fukushima 2017 genome)
-                        # TODO: verify this is an A1B subfamily member (PSI insert check)
-        - GAV69561.1    # GENOME: eukaryotic aspartyl protease, 457 aa
-                        # NOTE: Cephalotus AP was included in Fukushima 2017 convergence analysis
-
-      # --- Sarraceniaceae (Ericales — origin 5) ---
-      Sarracenia_purpurea:
-        - TODO          # GENOME (JAULLE000000000): search for A1B aspartic protease
-                        # Sarracenia has aspartic protease activity (Gallie & Chang 1997)
-
-      Darlingtonia_californica:
-        - TODO          # GENOME (JAUBWS000000000): search for A1B aspartic protease
-
-      Heliamphora_ciliata:
-        - TODO          # GENOME (JAUMHN000000000): search for A1B aspartic protease
-
-      # --- Lentibulariaceae (Lamiales — origin 6) ---
-      Utricularia_gibba:
-        - TODO          # GENOME (GCA_002189035.1): search for A1B aspartic protease
-                        # Note: Utricularia genome is highly reduced; may have lost this family
-
-      Pinguicula_moranensis:
-        - TODO          # GENOME (JAOWBN000000000): search for A1B aspartic protease
 
       # --- Outgroups (plant aspartic proteases, A1 family) ---
       Arabidopsis_thaliana:
@@ -451,24 +413,14 @@ tier1:
                         # This is the sequence used for crystal structures 7ZVA-C
 
       # --- Additional Nepenthes species (for cross-species comparison) ---
-      Nepenthes_mirabilis:
-        - TODO          # GENOME (PRJEB86749, Goh 2025 PLOS One): search for neprosin annotation
-                        # Query: txid[70380][Organism] AND neprosin OR DUF239[All Fields]
-                        # N. mirabilis is a common swamp pitcher plant, pH~3.0
-
       Nepenthes_rafflesiana:
         - TODO          # Low-pH pitcher (~pH 2); important for pH-stability comparison
-                        # No published genome; search NCBI for transcriptome/EST accessions
-                        # Key comparison: neprosin activity at extreme low pH vs N. ampullaria
 
       Nepenthes_bicalcarata:
         - TODO          # Mutualistic species (ants in pitchers); reduced acid secretion
-                        # No published genome; neprosin may be reduced/absent
 
       # NOTE: No neprosin homologs found outside Nepenthes as of April 2026
-      # All DUF239/G3 family members are restricted to the Nepenthes lineage
       # No outgroup sequences needed for this family (no convergence analysis)
-      # BUT: include for pH-correlated stability comparison across Nepenthes
 
 
 # ============================================================
@@ -507,183 +459,3 @@ tier2:
     description: "Esterases/lipases in carnivorous plant secretomes"
     convergent_source: "Not yet characterized"
     accessions: {}
-
-
-# ============================================================
-# NON-CARNIVOROUS FUNCTIONAL HOMOLOGS
-# ============================================================
-# Sequences from non-carnivorous plants that are functionally or
-# structurally homologous to carnivorous plant digestive enzymes.
-# Purpose: (1) Phylogenetic outgroups for ancestral reconstruction.
-#          (2) Structural reference benchmarks with known PDB entries.
-#          (3) Identify amino acid positions that differ between
-#              carnivorous and non-carnivorous lineages.
-#
-# These are NOT added to tier1/tier2 accessions above (where they
-# already appear as outgroups). This section provides context and
-# documents the biological rationale for each outgroup choice.
-
-non_carnivorous_homologs:
-
-  # --- GH19 Chitinases: structurally characterized references ---
-  gh19_structural_references:
-    notes: >
-      GH19 chitinases are ubiquitous in plants for defense against
-      fungal/insect chitin. Carnivorous plants recruited them for
-      prey digestion. Key structural references below.
-    entries:
-      Secale_cereale_4J0L:
-        accession: CAA28969.1        # Rye seed GH19 chitinase; PDB 4J0L (1.75 Å)
-        pdb: "4J0L"
-        resolution_A: 1.75
-        notes: >
-          Gold standard GH19 fold reference. Active site: E67, E89 (catalytic
-          Glu pair). Used for active-site assignment in all carnivorous plant GH19s.
-          Crystal structure at 1.75 Å resolution — highest quality reference available.
-
-      Hordeum_vulgare_GH19:
-        accession: TODO              # Barley seed GH19 chitinase; PDB available for class II
-        notes: >
-          Barley class II GH19 chitinase (Win4 protein) has structural data.
-          TODO: identify correct NCBI accession for the barley GH19 PDB entry.
-
-      Arabidopsis_thaliana_CHIV:
-        accession: BAD44251.1        # AtCHIV / AT3G54420; class IV, 273 aa
-        notes: >
-          The best-characterized non-carnivorous GH19 class IV chitinase (same
-          class as carnivorous plant chitinases). No crystal structure available
-          but functionally characterized by Passarinho & de Vries 2002, Plant Mol Biol.
-
-  # --- Aspartic proteases: A1B subfamily (nepenthesin-like) ---
-  a1b_aspartic_protease_outgroups:
-    notes: >
-      The A1B (nepenthesin-like) subfamily is defined by the presence of a
-      'plant-specific insert' (PSI) domain absent in pepsin-type A1A proteases.
-      Nepenthesins, droserasins, and dionains all belong to A1B. Non-carnivorous
-      A1B proteases include phytepsins (vacuolar processing), nucellin, and
-      HvNEP-1 (barley apoplastic protease).
-    entries:
-      Hordeum_vulgare_HvNEP1:
-        accession: M0W9B2            # UniProt; barley apoplastic nepenthesin-like AP
-        subfamily: A1B
-        has_PSI_insert: true
-        notes: >
-          HvNEP-1 is the best non-carnivorous A1B reference. Expressed in grain
-          endosperm; apoplastic localization parallels carnivorous plant secretome
-          localization. Characterized for substrate specificity (Frontiers Plant Sci 2021).
-          Use as primary outgroup for nepenthesin phylogeny.
-
-      Hordeum_vulgare_nucellin:
-        accession: TODO              # Barley nucellin; lacks PSI insert — structural contrast
-        subfamily: A1 (nucellin-type)
-        has_PSI_insert: false
-        notes: >
-          Nucellin defines the boundary between A1A and A1B subfamilies (Chen &
-          Foolad 1997). No PSI domain. Including alongside HvNEP-1 lets us map
-          the PSI insert as a lineage-specific acquisition. Search NCBI for
-          "Hordeum vulgare nucellin" — accession is in Chen & Foolad 1997 paper.
-
-      Arabidopsis_thaliana_phytepsin:
-        accession: CAA64248.1        # AtAP1 / AT1G11910; vacuolar phytepsin, 497 aa
-        subfamily: A1B
-        has_PSI_insert: true
-        notes: >
-          AtAP1 is the canonical A1B plant aspartic protease (phytepsin). Has PSI
-          insert. Not secreted into apoplast under normal conditions. Useful for
-          comparing signal peptide evolution in carnivorous vs non-carnivorous contexts.
-
-      Solanum_lycopersicum_AP:
-        accession: XP_004253208.1    # Guard cell AP-2; 486 aa (previously added as outgroup)
-        subfamily: A1B
-        notes: >
-          Tomato aspartic protease with guard-cell expression; provides Solanales
-          outgroup perspective for A1B evolution.
-
-      Cynara_cardunculus_cardosin:
-        accession: AAC31775.1        # Cardosin A from cardoon (Cynara cardunculus); 487 aa
-        subfamily: A1B
-        has_PSI_insert: true
-        notes: >
-          Cardosins are secreted to the cell wall/apoplast in floral/seed tissues.
-          Best-characterized non-carnivorous secreted plant AP with apoplastic
-          localization — direct functional analog of carnivorous plant digestive APs.
-          Crystal structure available (PDB 1B5F at 2.0 Å) — excellent structural ref.
-          Cynara is Asterales (not closely related to any carnivore lineage).
-
-  # --- PAPs: non-carnivorous structural references ---
-  pap_non_carnivorous:
-    notes: >
-      Purple acid phosphatases (PAPs) are broadly expressed for phosphate
-      mobilization in all plants. Fe-Mn type (PAP12) vs Fe-Zn type (PAP27)
-      differ in metal composition and some substrate affinities.
-    entries:
-      Arabidopsis_PAP12:
-        accession: NP_180287.2       # AtPAP12 / AT2G01880; Fe-Mn type, 469 aa
-        metal_center: Fe-Mn
-        crystal_pdb: null
-        notes: >
-          Best-characterized Arabidopsis PAP for Pi starvation responses (Hurley
-          et al. 2010). No crystal structure; homology model published.
-          Fe-Mn type is the most common in plant secretomes.
-
-      Arabidopsis_PAP27:
-        accession: AED95939.1        # AtPAP27 / AT1G13750; ~611 aa
-        metal_center: Fe-Zn
-        notes: >
-          Larger isoform; best size match to carnivorous plant PAPs (which tend
-          to be 550-680 aa). Use for size-appropriate alignment anchoring.
-
-      Glycine_max_GmPAP:
-        accession: BAA88217.1        # Soybean PAP; Fe-Mn type, 493 aa
-        crystal_pdb: "1RDP"          # Crystal structure at 2.65 Å (Schenk et al. 2005)
-        metal_center: Fe-Mn
-        notes: >
-          GmPAP has the only available plant PAP crystal structure (PDB 1RDP).
-          Gold standard for active-site geometry and metal-coordination assignment.
-          Use as primary structural reference for PAP active-site annotation.
-          Resolution 2.65 Å. Schenk et al. 2005, J Mol Biol 350:383.
-
-      Lupinus_luteus_PAP:
-        accession: AAA86820.1        # Lupin PAP; 441 aa; earliest characterized plant PAP
-        notes: >
-          First plant PAP to be biochemically characterized (DelaFuente et al. 1990).
-          Useful as historical reference; not a priority for structural analysis.
-
-  # --- RNase T2: non-carnivorous homologs ---
-  rnase_t2_non_carnivorous:
-    notes: >
-      S-RNases (self-incompatibility) and S-like RNases (stress response,
-      phosphate starvation) are both T2 family members. S-like RNases
-      (RNS class) are the relevant homologs for carnivorous plant digestive
-      RNases. Many have been crystallized.
-    entries:
-      Arabidopsis_RNS1:
-        accession: AAC48926.1        # RNS1 / AT2G02990; stress-inducible S-like RNase
-        notes: >
-          AtRNS1 is upregulated during phosphate starvation and wounding — direct
-          functional parallel to carnivorous plant RNases (prey nutrient acquisition).
-          No crystal structure. Best functional analog.
-
-      Nicotiana_tabacum_RNaseNW:
-        accession: BAA82385.1        # Tobacco RNase NW (S-like); 237 aa
-        crystal_pdb: "1IYB"          # NMR structure; plant S-like RNase
-        notes: >
-          Tobacco RNase NW (PDB 1IYB, NMR) is the best structural reference for
-          plant S-like RNases. Close relative to carnivorous plant digestive RNases.
-          Active site: conserved His residues (catalytic mechanism).
-
-      Pyrus_pyrifolia_S-RNase:
-        accession: BAA89040.1        # Pear S-RNase S1-allele; self-incompatibility RNase
-        crystal_pdb: "1IYC"          # Crystal structure, 1.5 Å; Matsuura et al. 2001
-        notes: >
-          Pear S-RNase PDB 1IYC (1.5 Å) is the highest-resolution T2-family RNase
-          structure. Use for active-site His positioning validation. S-RNases differ
-          from S-like RNases in having a hypervariable region (HVR) for self-recognition,
-          but the catalytic core is structurally conserved. Prunus armeniaca S-RNase
-          (PDB 1OFT, 1.78 Å) is an alternative high-resolution reference.
-
-      Oryza_sativa_RNaseOs:
-        accession: BAA83488.1        # Rice OS-A (stress-inducible S-like RNase); 231 aa
-        notes: >
-          Rice S-like RNase with expression in senescing organs. Represents a
-          monocot S-like RNase for broader phylogenetic sampling.

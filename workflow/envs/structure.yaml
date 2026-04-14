@@ -1,12 +1,17 @@
 name: structure
-channels: [conda-forge, bioconda]
+channels:
+  - conda-forge
+  - bioconda
 dependencies:
-  - foldseek
-  - dssp=4.4.0
+  - foldseek>=9      # All-vs-all structural search (3Di+AA)
+  - dssp=4.4.0       # Secondary structure + SASA
   - biopython=1.84
   - click
   - pandas
   - numpy
+  - gemmi            # CIF/mmCIF parsing for AF3 output files
   - pip
   - pip:
-    - chai_lab>=0.6.1
+    - chai_lab>=0.6.1  # Fallback structure predictor (Apache 2.0)
+    - boltz>=2.0       # Boltz-2: RNA-protein and binding affinity prediction (MIT)
+    - ABCFold>=1.0     # Multi-predictor comparison wrapper

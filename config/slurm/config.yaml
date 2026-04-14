@@ -1,19 +1,91 @@
-# Snakemake SLURM profile for Hellbender HPC.
+# Snakemake SLURM profile for Hellbender HPC (Mizzou).
+# Partition reference:
+#   general    — free tier, max 2 days, CPU only, fair-share
+#   requeue    — free tier, preemptable (avoid for long runs)
+#   gpu        — A100 80GB / H100 / L40S, max 2 days
+#   interactive — testing only, max 4 h, no batch
+#   priority   — investor-only, max 28 days
+#
+# Maintenance window: 2nd Tuesday of each month — do not schedule long jobs.
+
 executor: slurm
+
 default-resources:
-  slurm_partition: General
+  slurm_partition: general
   mem_mb: 8000
-  runtime: 120          # minutes
+  runtime: 120              # minutes (default 2h; adjust per rule)
   cpus_per_task: 4
+
 set-resources:
+  # --- MSA generation stage (CPU-intensive, no GPU) ---
+  af3_msa:
+    slurm_partition: general
+    mem_mb: 85000           # 80 GB recommended per NIH Biowulf AF3 docs
+    cpus_per_task: 12
+    runtime: 120            # 2 h typical for MSA generation
+
+  # --- AF3 inference stage (GPU required) ---
   predict_af3:
     slurm_partition: gpu
-    slurm_extra: "'--gres=gpu:1'"
-    mem_mb: 64000
-    runtime: 480
+    slurm_extra: "'--gres=gpu:A100:1'"   # Request one A100 80GB GPU
+    mem_mb: 40000
+    cpus_per_task: 8
+    runtime: 240            # 4 h; 5 seeds × ~45 min/seed on A100
+
+  # --- Chai-1 inference (fallback) ---
+  predict_chai1:
+    slurm_partition: gpu
+    slurm_extra: "'--gres=gpu:A100:1'"
+    mem_mb: 32000
+    cpus_per_task: 4
+    runtime: 120
+
+  # --- Boltz-2 (RNA-protein / binding affinity) ---
+  predict_boltz2:
+    slurm_partition: gpu
+    slurm_extra: "'--gres=gpu:A100:1'"
+    mem_mb: 32000
+    cpus_per_task: 4
+    runtime: 60             # Boltz-2 claims ~20s/structure with single GPU
+
+  # --- OrthoFinder (multithreaded, no GPU) ---
+  run_orthofinder:
+    slurm_partition: general
+    mem_mb: 32000
+    cpus_per_task: 16
+    runtime: 480            # 8 h for full proteome comparison
+
+  # --- FoldX PositionScan ---
   run_foldx_scan:
+    slurm_partition: general
     mem_mb: 4000
-    runtime: 60
+    cpus_per_task: 1
+    runtime: 60             # ~seconds/mutation; batch up to 200 mutations
+
+  # --- EVcouplings plmc (multithreaded) ---
+  run_evcouplings:
+    slurm_partition: general
+    mem_mb: 16000
+    cpus_per_task: 8
+    runtime: 120
+
+  # --- AutoDock Vina docking ---
   run_docking:
+    slurm_partition: general
     mem_mb: 4000
+    cpus_per_task: 4
+    runtime: 60
+
+  # --- APBS electrostatics ---
+  run_electrostatics:
+    slurm_partition: general
+    mem_mb: 8000
+    cpus_per_task: 2
     runtime: 30
+
+  # --- Salmon expression ---
+  quantify_expression:
+    slurm_partition: general
+    mem_mb: 16000
+    cpus_per_task: 8
+    runtime: 240

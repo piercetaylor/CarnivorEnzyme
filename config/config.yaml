@@ -25,15 +25,21 @@ convergence:
   posterior_threshold: 0.8
 
 structure:
-  primary_predictor: alphafold3
+  primary_predictor: alphafold3       # Confirmed available on Hellbender A100/H100 nodes
   fallback_predictor: chai1
-  af3_module: "alphafold3/3.0.1"    # Hellbender module name
-  n_seeds: 5
-  plddt_exclude: 50
+  rna_predictor: boltz2               # NEW: use Boltz-2 for RNase T2 RNA-protein co-folding
+  af3_module: "alphafold3/3.0.1"      # Hellbender module name (verify with: module avail alphafold3)
+  af3_model_dir: ""                   # Set to $AF3_MODEL_DIR on cluster
+  n_seeds: 5                          # Seeds for Tier 1; use 1 for Tier 2
+  plddt_exclude: 50                   # Exclude residues with pLDDT < 50 from FoldX
+  plddt_confident: 70                 # Residues with pLDDT >= 70 are "confident"
+  tm_score_af3_threshold: 0.90        # Test Gate 4: AF3 must exceed this vs experimental
+  tm_score_chai1_threshold: 0.85      # Test Gate 4: Chai-1 threshold
 
 foldx:
   repair_rounds: 5
   temperature: 298
+  ph_values: [2.5, 3.5, 5.0]         # NEW: pH sweep using FoldX 4.1/5.1 pH-dependent force field
   ddg_destabilizing: 1.0
   ddg_stabilizing: -0.5
 
@@ -49,6 +55,25 @@ docking:
 electrostatics:
   ph_values: [2.5, 3.5, 5.0]
   grid_spacing: 0.5
+
+hellbender:
+  login: "hellbender-login.rnet.missouri.edu"
+  dtn: "hellbender-dtn-p1.rnet.missouri.edu"
+  ondemand: "https://ondemand.rnet.missouri.edu"
+  # Partition and resource defaults (see AGENTS.md HPC Execution Checklist)
+  partition_cpu: "general"
+  partition_gpu: "gpu"
+  gpu_type: "A100"                    # A100 80GB; also H100 available (see Hellbender docs)
+  max_walltime_general: "2-00:00:00"  # 2 days; general and gpu partitions
+  max_walltime_interactive: "4:00:00"
+  # Storage paths — configure these on the cluster before running
+  conda_env_dir: ""        # Set to /mnt/pixstor/data/$USER/miniconda/envs
+  conda_pkg_dir: ""        # Set to /mnt/pixstor/data/$USER/miniconda/pkgs
+  scratch: "/local/scratch" # Ephemeral per-node scratch; cleared after job
+  # Software paths
+  foldx_binary: ""         # Set $FOLDX_BINARY in ~/.bashrc; or provide path here
+  af3_model_dir: ""        # Path to downloaded AF3 model weights
+  adfr_binary: ""          # Path to ADFR Suite prepare_receptor binary
 
 expression:
   datasets:
