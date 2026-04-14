@@ -1,4 +1,5 @@
 # CarnivorEnzyme
+<<<<<<< HEAD
 
 Structural atlas of convergently evolved digestive enzymes in carnivorous plants.
 
@@ -48,3 +49,6 @@ If you use this pipeline or database, please cite:
 ## License
 
 MIT
+=======
+Predicting 3D structures of digestive enzymes from independently-evolved carnivorous plant lineages
+>>>>>>> 277cae1871acb45a5cc5d19b90df6d44aeb62242
