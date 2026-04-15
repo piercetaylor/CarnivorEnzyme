@@ -91,9 +91,6 @@ if config.get("qmmm", {}).get("enabled", False):
                 2> {log}
             """
 
-else:
-    # Provide a no-op rule so Snakemake does not fail on include
-    rule run_qmmm:
-        """QM/MM disabled (config.qmmm.enabled = false). No-op rule."""
-        run:
-            pass
+# When qmmm.enabled = false, no rules are defined for QM/MM.
+# Attempting to request qmmm outputs will produce a "No rule to produce" error,
+# which is the correct behavior — QM/MM is an optional, gated phase.

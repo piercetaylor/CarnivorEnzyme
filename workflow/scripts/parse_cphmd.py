@@ -66,19 +66,82 @@ def _parse_lambda_xvg(xvg_path: Path) -> pd.DataFrame:
     return df
 
 
-def _extract_titratable_residue_info(replica_dirs: list[Path]) -> dict[str, str]:
-    """Attempt to recover titratable residue labels from GROMACS output files.
+def _extract_titratable_residue_info(replica_dirs: list[Path]) -> dict[int, str]:
+    """Recover titratable residue labels from phbuilder-generated annotation files.
 
-    Returns {lambda_index: residue_label} mapping from .log or .top files.
-    Best-effort; returns integer labels if residue names cannot be determined.
+    phbuilder writes a 'lambda_coupling.dat' file with lines:
+        <lambda_index>  <residue_name>  <residue_number>  <chain>
+
+    If that file is absent, falls back to parsing the .top file for TITRATABLE
+    residue entries (PHE, ASP, GLU, HIS, LYS, CYS, TYR with alternate protonation).
+    Returns {lambda_index (1-based int): "RES_NNN_CHAIN"} or {} on failure.
     """
-    # Try to read phbuilder-generated annotation
+    # phbuilder writes this in the simulation parent directory (one level up from replicas)
+    search_dirs = set()
     for d in replica_dirs:
-        for fname in ["titratable.mdp", "lambda_coupling.dat", "cphmd.log"]:
-            fpath = d.parent / fname
-            if fpath.exists():
-                logger.debug("Found annotation file: %s", fpath)
-                # Parse is format-specific; return placeholder
+        search_dirs.add(d.parent)
+        search_dirs.add(d.parent.parent)
+
+    for search_dir in search_dirs:
+        # Try phbuilder lambda_coupling.dat annotation file
+        coupling_file = search_dir / "lambda_coupling.dat"
+        if coupling_file.exists():
+            logger.debug("Reading titratable residue labels from %s", coupling_file)
+            result = {}
+            try:
+                with open(coupling_file) as fh:
+                    for line in fh:
+                        line = line.strip()
+                        if not line or line.startswith("#"):
+                            continue
+                        parts = line.split()
+                        if len(parts) >= 3:
+                            lam_idx = int(parts[0])
+                            res_name = parts[1]
+                            res_num = parts[2]
+                            chain = parts[3] if len(parts) > 3 else "A"
+                            result[lam_idx] = f"{res_name}_{res_num}_{chain}"
+                if result:
+                    logger.info(
+                        "Loaded %d titratable residue labels from %s",
+                        len(result), coupling_file,
+                    )
+                    return result
+            except (ValueError, IndexError) as exc:
+                logger.warning("Could not parse %s: %s", coupling_file, exc)
+
+        # Fallback: scan GROMACS .top for [ moleculetype ] + titratable residue markers
+        top_file = search_dir / "titratable.top"
+        if top_file.exists():
+            logger.debug("Attempting residue label extraction from %s", top_file)
+            titratable_aa = {"ASP", "ASPH", "GLU", "GLUH", "HIS", "HISD", "HISE",
+                             "LYS", "LYSH", "CYS", "CYSH", "TYR", "TYRH"}
+            result = {}
+            lam_idx = 1
+            try:
+                with open(top_file) as fh:
+                    for line in fh:
+                        parts = line.strip().split()
+                        if len(parts) >= 4 and parts[0].upper() in titratable_aa:
+                            res_name = parts[0].upper()
+                            res_num = parts[2]
+                            chain = "A"
+                            result[lam_idx] = f"{res_name}_{res_num}_{chain}"
+                            lam_idx += 1
+                if result:
+                    logger.info(
+                        "Inferred %d titratable residue labels from topology",
+                        len(result),
+                    )
+                    return result
+            except (ValueError, IndexError) as exc:
+                logger.warning("Could not parse topology %s: %s", top_file, exc)
+
+    logger.warning(
+        "Could not determine titratable residue labels; output will use integer "
+        "lambda_index. To fix: ensure phbuilder writes lambda_coupling.dat in %s.",
+        [str(d.parent) for d in replica_dirs[:2]],
+    )
     return {}
 
 
@@ -125,6 +188,9 @@ def main(
     output_path = Path(output)
     equil_ps = equilibration_ns * 1000.0
 
+    # Attempt to map lambda_index integers to human-readable residue labels
+    residue_labels = _extract_titratable_residue_info(dir_paths)
+
     all_records = []
 
     for rep_idx, rep_dir in enumerate(dir_paths):
@@ -155,6 +221,9 @@ def main(
                     "ph": ph_value,
                     "replica": rep_idx,
                     "lambda_index": lambda_idx,
+                    # residue_label is the human-readable ID (e.g. "GLU_188_A").
+                    # Falls back to "lambda_{idx}" if phbuilder annotation is unavailable.
+                    "residue_label": residue_labels.get(lambda_idx, f"lambda_{lambda_idx}"),
                     "protonated_fraction": prot_frac,
                     "lambda_mean": lam_mean,
                     "lambda_std": lam_std,
@@ -170,7 +239,7 @@ def main(
 
     # Average across replicas per residue
     agg_df = (
-        results_df.groupby(["variant_id", "ph", "lambda_index"])
+        results_df.groupby(["variant_id", "ph", "lambda_index", "residue_label"])
         .agg(
             protonated_fraction_mean=("protonated_fraction", "mean"),
             protonated_fraction_std=("protonated_fraction", "std"),

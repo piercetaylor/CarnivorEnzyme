@@ -76,7 +76,7 @@ def _parse_xvg_dhdl(xvg_path: Path) -> tuple[np.ndarray, list[float]]:
     return matrix, lambda_vals
 
 
-def _collect_dhdl_for_leg(leg_dir: Path) -> tuple[np.ndarray, list[float]]:
+def _collect_dhdl_for_leg(leg_dir: Path) -> tuple[np.ndarray, np.ndarray, list[float]]:
     """Collect all dH/dλ frames across all replicates and windows in a leg directory.
 
     Returns concatenated (u_kln_matrix, lambda_states) suitable for pymbar MBAR.
@@ -158,8 +158,12 @@ def _mbar_free_energy(u_kln: np.ndarray, n_k: np.ndarray) -> tuple[float, float]
         return float("nan"), float("nan")
 
     try:
-        mbar = pymbar.MBAR(u_kln, n_k, verbose=False)
-        delta_f, d_delta_f, _ = mbar.getFreeEnergyDifferences(return_dict=False)
+        mbar = pymbar.MBAR(u_kln, n_k)
+        # pymbar >= 4.0 API: compute_free_energy_differences() returns a dict.
+        # pymbar 3.x used getFreeEnergyDifferences(return_dict=False) — that API is removed.
+        results = mbar.compute_free_energy_differences()
+        delta_f = results["Delta_f"]
+        d_delta_f = results["dDelta_f"]
         n_states = delta_f.shape[0]
         dG_kT = delta_f[0, n_states - 1]
         dG_err_kT = d_delta_f[0, n_states - 1]
