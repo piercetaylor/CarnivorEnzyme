@@ -1,0 +1,30 @@
+name: qmmm
+# QM/MM environment: ORCA 6 (QM) + GROMACS (MM) via ORCA-GROMACS interface.
+#
+# IMPORTANT — ORCA LICENSE REQUIRED:
+#   ORCA 6 is free for academic use but requires registration and manual
+#   installation. Download from: https://orcaforum.kofo.mpg.de/
+#   Set the path in config/config.yaml: qmmm.orca_binary
+#   ORCA is NOT conda-installable.
+#
+# Gate: this environment is only created and used when
+#   config["qmmm"]["enabled"] is true AND config["qmmm"]["orca_binary"] is set.
+#   Rules in workflow/rules/qmmm.smk check this gate at the top.
+#
+# Method: r2SCAN-3c composite DFT (Grimme et al. 2021, J. Chem. Phys. 154:064103)
+#   - Good speed/accuracy balance for catalytic mechanism studies
+#   - Validated for metalloenzyme active sites (relevant for PAP Fe-Zn/Fe-Mn center)
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - gromacs=2024.2                 # MM region; must match md.yaml version
+  - ase>=3.23                      # Atomic Simulation Environment: ORCA I/O interface
+  - numpy
+  - scipy
+  - pandas
+  - click
+  - pip
+  - pip:
+    - xtb-python>=22.1             # xTB semiempirical method (fast QM for initial scans)
+    # ORCA must be installed separately; provide path via config

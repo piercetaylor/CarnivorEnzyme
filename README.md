@@ -42,13 +42,17 @@ Neprosins are the only glutamic peptidases identified in plants (Tiew & Goh 2022
 
 ## Analytical Design
 
-The pipeline executes eight sequential phases on a Snakemake DAG targeting a SLURM HPC environment (AlphaFold3 on A100/H100 GPUs).
+The pipeline executes ten phases on a Snakemake DAG targeting a SLURM HPC environment (AlphaFold3 on A100/H100 GPUs). The analysis produces not just hypotheses but thermodynamically grounded answers.
 
 **Phylogenomics (Phases 1–3).** Protein sequences for 20 carnivorous and 6 outgroup species are retrieved from NCBI and UniProt, aligned with MAFFT L-INS-i, and trimmed with trimAl. IQ-TREE 3 infers per-family maximum-likelihood gene trees with ModelFinder Plus model selection and the `-ancestral` flag for marginal ancestral state reconstruction. Convergent positions are defined as alignment sites where the same derived residue was independently fixed on ≥2 carnivorous lineage branches, evaluated against a Poisson null parameterized by branch-specific substitution rates (posterior probability threshold ≥0.8; cf. Fukushima & Pollock 2023).
 
-**Structure prediction (Phase 4).** AlphaFold3 (5 seeds per Tier 1 target) predicts structures for all unique sequences; Chai-1 serves as a fallback. Validation requires TM-score >0.90 against the neprosin crystal structure 7ZVA (1.80 Å) before downstream analysis proceeds. Residues with pLDDT <50 are masked in all subsequent steps.
+**ESM-2 fitness triage (Phase 3A).** Before committing to expensive downstream computation, each convergent substitution is scored with ESM-2 masked marginal log-likelihood (Lin et al. 2023, *Science* 379:1123). The log-likelihood ratio (LLR) quantifies whether the derived amino acid is sequence-contextually favored. Sites with LLR > 0 — consistent with positive selection — are prioritized for FoldX, CpHMD, and FEP.
 
-**Mutation effect analysis (Phase 5).** Each convergent substitution is characterized by two orthogonal methods. FoldX 5.1 computes folding free energy change (ΔΔG) using the revised 2025 force field, which adds explicit pH-dependent protonation of Asp, Glu, Lys, Arg, and Tyr — run at pH 2.5, 3.5, and 5.0 to span the measured range of pitcher fluid pH across species. EVcouplings independently fits a Potts model of direct residue–residue coevolution to a deep plant-wide MSA and scores each substitution's evolutionary fitness consequence (ΔΔE). Comparing ΔΔG against ΔΔE classifies each convergent site mechanistically:
+**Structure prediction (Phase 4).** AlphaFold3 (5 seeds per Tier 1 target) predicts structures for all unique sequences; Chai-1 serves as a fallback. Validation requires TM-score >0.90 against the neprosin crystal structure 7ZVA (1.80 Å). Residues with pLDDT <50 are masked in all subsequent steps.
+
+**Ancestral structure reconstruction (Phase 4A).** The IQ-TREE marginal ancestral state reconstruction (.state file) is parsed to recover the MAP sequence of the carnivore MRCA for each family. AlphaFold3 predicts the ancestral structure. TM-align comparisons between the ancestral and each modern carnivorous ortholog — restricted to convergent positions — test whether those sites are structurally displaced relative to background, which would implicate them in the evolutionary acquisition of digestive function.
+
+**Convergent substitution classification (Phase 5).** Each convergent substitution is characterized by two orthogonal methods. FoldX 5.1 computes folding free energy change (ΔΔG) using the revised 2025 force field with explicit pH-dependent protonation, run at pH 2.5, 3.5, and 5.0. EVcouplings independently fits a Potts model of residue–residue coevolution and scores each substitution's evolutionary fitness consequence (ΔΔE). Comparing ΔΔG against ΔΔE classifies each convergent site mechanistically:
 
 ```text
                         EVmutation ΔΔE
@@ -63,9 +67,13 @@ The pipeline executes eight sequential phases on a Snakemake DAG targeting a SLU
                    |_____________|_____________|
 ```
 
-To our knowledge, no published study has applied a combined FoldX × EVmutation analysis to convergent substitutions in any organism. The two methods have been benchmarked against each other (Livesey & Marsh 2023) but not deployed as orthogonal axes for mechanistic classification. Their complementarity — FoldX captures thermodynamic stability (r = 0.71, Delgado et al. 2025); EVmutation captures evolutionary constraint from coevolutionary couplings (median r = 0.56 across 34 DMS assays, Hopf et al. 2017) — is precisely what makes the quadrant framework informative: disagreement between the axes is the signal, not noise. A substitution that is thermodynamically neutral but evolutionarily favored implicates functional rather than stability-based selection; one that is destabilizing yet evolutionarily favored suggests a stability–function tradeoff under positive selection; one that is unfavorable on both axes is likely a false positive in the convergence detection step.
+No published study has applied a combined FoldX × EVmutation analysis to convergent substitutions in any organism. ESM-2 LLR provides a third independent axis: sites that are favorable on all three axes represent the strongest candidates for adaptive convergence.
 
-**Downstream analyses (Phases 6–8).** AutoDock Vina docks five substrates (GlcNAc₄, gliadin octapeptide PQPQLPYP, ApA dinucleotide, p-nitrophenyl phosphate, hemoglobin octapeptide VHLTPEEK) against all predicted structures. PDB2PQR + APBS computes electrostatic potential surfaces at pH 2.5, 3.5, and 5.0, enabling correlation of surface charge distribution with measured pitcher fluid pH across species. Salmon quantifies expression of target genes in the three lineages with available paired RNA-seq and genome assemblies (*N. gracilis* PRJDB8591, *Cephalotus* PRJDB4470, *Dionaea* PRJEB12493).
+**Alchemical free-energy perturbation (Phase 5D).** Sites classified as functional_gain or stability_function_tradeoff, and where ESM-2 LLR > 0, are advanced to GROMACS + pmx alchemical FEP. The thermodynamic cycle computes ΔΔG_bind — the change in substrate binding free energy attributable to the convergent substitution — with MBAR uncertainty estimation across 13 λ-windows × 5 ns × 3 replicates. A negative ΔΔG_bind is direct evidence that the convergent amino acid enhances substrate binding. Note: pmx does not support proline residue mutations; affected sites are excluded and logged.
+
+**Constant-pH MD (Phase 5E).** GROMACS native λ-dynamics CpHMD (phbuilder setup; Gapsys et al. 2022, *JCTC*) determines whether convergent substitutions shift the protonation equilibrium of nearby titratable residues (Asp, Glu) at pitcher fluid pH values. This addresses the adaptation of active-site chemistry to the highly acidic secretion environment — a question uniquely relevant to carnivorous plant enzymes.
+
+**Downstream analyses (Phases 6–8).** AutoDock Vina docks five substrates against all predicted structures. PDB2PQR + APBS computes electrostatic potential surfaces at pH 2.5, 3.5, and 5.0, enabling correlation of surface charge distribution with pitcher fluid pH across species. Salmon quantifies expression of target genes in the three lineages with available paired RNA-seq and genome assemblies.
 
 All results are aggregated into a SQLite atlas and exposed through a Streamlit browser interface.
 
@@ -85,7 +93,7 @@ snakemake --use-conda phase1 --cores 4
 snakemake --use-conda phase2 --executor slurm --profile config/slurm/
 ```
 
-External dependencies (not conda-installable): FoldX 5+ (academic license, [foldxsuite.crg.eu](https://foldxsuite.crg.eu)), ADFR Suite 1.0 (Scripps Research), TM-align.
+External dependencies (not conda-installable): FoldX 5+ (academic license, [foldxsuite.crg.eu](https://foldxsuite.crg.eu)), ADFR Suite 1.0 (Scripps Research), TM-align, ORCA 6 (QM/MM only; academic license free, [orcaforum.kofo.mpg.de](https://orcaforum.kofo.mpg.de)).
 
 ---
 
@@ -95,8 +103,12 @@ External dependencies (not conda-installable): FoldX 5+ (academic license, [fold
 - Fukushima K, Pollock DD. (2023) Detecting macroevolutionary genotype–phenotype associations using error-corrected rates of protein convergence. *Nat. Ecol. Evol.*
 - Del Amo-Maestro L et al. (2022) Molecular and in vivo studies of a glutamate-class prolyl-endopeptidase for coeliac disease therapy. *Nat. Commun.* 13:4446.
 - Abramson J et al. (2024) Accurate structure prediction of biomolecular interactions with AlphaFold 3. *Nature* 630:493–500.
+- Lin Z et al. (2023) Evolutionary-scale prediction of atomic-level protein structure with a language model. *Science* 379:1123–1130.
 - Hopf TA et al. (2017) Mutation effects predicted from sequence co-variation. *Nat. Biotechnol.* 35:128–135.
 - Botte M et al. (2025) FoldX force field revision with pH dependency and expanded training set. *Bioinformatics* 41:btaf064.
+- Gapsys V et al. (2022) GROMACS native constant-pH MD (λ-dynamics). *JCTC* 18:6320.
+- Gapsys V, Michielssens S, Seeliger D, de Groot BL. (2015) pmx: Automated protein structure and topology generation for alchemical perturbations. *JCTC* 11:4494.
+- Shirts MR, Chodera JD. (2008) Statistically optimal analysis of samples from multiple equilibrium states. *JCP* 129:124105.
 
 ## License
 

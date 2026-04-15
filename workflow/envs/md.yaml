@@ -1,0 +1,37 @@
+name: md
+# Combined GROMACS environment for both CpHMD and FEP/RBFE.
+# Using a single env avoids redundant GROMACS installs (>2 GB each).
+#
+# CpHMD: GROMACS native λ-dynamics (Gapsys et al. 2022, JCTC 18:4813)
+#   Setup: phbuilder (conda-forge) generates titratable topology
+#   Run:   gmx mdrun with -multidir for replica exchange
+#
+# FEP/RBFE: GROMACS + pmx hybrid topology (Gapsys et al. 2015, JCTC)
+#   Setup: pmx mutate → pmx gentop → gmx grompp
+#   Analysis: pymbar (MBAR estimator)
+#
+# NOTE: ORCA is NOT included here — it requires a separate academic license
+# and manual installation. See workflow/envs/qmmm.yaml.
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.11
+  - gromacs=2024.2                 # Latest stable; includes native CpHMD (λ-dynamics)
+  - phbuilder>=0.1.4               # Generates titratable CpHMD topologies; conda-forge
+  - ambertools=23                  # tleap for initial topology + force field parameters
+  - pymbar>=4.0                    # MBAR estimator for FEP free-energy calculation
+  - mdanalysis>=2.7                # Trajectory analysis for CpHMD pKa extraction
+  - mdtraj>=1.9                    # Alternative trajectory analysis; fast RMSD
+  - numpy
+  - scipy
+  - pandas
+  - matplotlib
+  - click
+  - tqdm
+  - pip
+  - pip:
+    - pmx>=0.0.4                   # Hybrid topology mutations for alchemical FEP
+    # NOTE: pmx does NOT support proline residue mutations.
+    # Convergent sites involving proline are skipped automatically (see run_fep.py).
+    # pmx GitHub: https://github.com/deGrootLab/pmx

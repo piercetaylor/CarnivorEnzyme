@@ -62,6 +62,22 @@ substrates:
     source: "Athauda et al. 2004, Biochem J 381:295 — used to characterize nepenthesin specificity"
     notes: "Build 3D structure from sequence: use Meeko mk_prepare_ligand.py with extended conformation as starting geometry. Aspartic proteases cleave between hydrophobic residues; expect binding at Leu-Thr or Thr-Pro bond."
 
+  # --- Purple acid phosphatases — FEP substrate (physiological) ---
+  phosphoserine:
+    for_family: purple_acid_phosphatase
+    description: "O-Phospho-L-serine — phosphomonoester substrate cleaved by PAPs in vivo"
+    smiles: "N[C@@H](COP(=O)(O)O)C(=O)O"
+    pubchem_cid: 68841              # O-Phosphoserine
+    mol_weight: 185
+    source: "del Pozo et al. 1999, Plant J 20:529; Olczak et al. 2003, Physiol Plant"
+    notes: >
+      Use for FEP binding free-energy calculations in place of pNPP. pNPP is a
+      chromogenic assay molecule not found in prey; phosphoserine is a physiological
+      phosphomonoester substrate released from prey protein digestion. Download SDF
+      from PubChem CID 68841; generate 3D with OpenBabel. Retain pNPP for docking
+      benchmark only (pNPP is rigid and well-validated for Vina score calibration).
+    role: fep_substrate             # primary substrate for FEP; pNPP retained for docking
+
   # --- Additional substrate for nepenthesins (for cross-validation) ---
   Lys_bradykinin:
     for_family: nepenthesins

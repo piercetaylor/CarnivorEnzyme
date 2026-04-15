@@ -75,6 +75,61 @@ hellbender:
   af3_model_dir: ""        # Path to downloaded AF3 model weights
   adfr_binary: ""          # Path to ADFR Suite prepare_receptor binary
 
+esm2:
+  # ESM-2 masked marginal scoring (Phase 3A — evolutionary fitness triage)
+  # Runs BEFORE FoldX to triage convergent sites by sequence-level fitness cost.
+  model: "esm2_t33_650M_UR50D"   # 650M-param model; balance of speed and accuracy
+  batch_size: 32                  # Sequences per GPU batch
+  device: "cuda"                  # Use "cpu" for small test runs (slow)
+  score_threshold_favorable: 0.0  # log-likelihood ratio > 0 → sequence model favors derived AA
+
+ancestral:
+  # Ancestral structure reconstruction (Phase 4A)
+  # Requires IQ-TREE .state output from Phase 2 phylogeny rules.
+  mrca_posterior_threshold: 0.8   # Posterior probability to accept MRCA state reconstruction
+  active_site_radius_angstrom: 8.0  # Residues within this radius of catalytic residues
+  tm_score_threshold: 0.80          # Min TM-score between ancestral and modern structure (warn if below)
+  rmsd_threshold_angstrom: 3.0      # Max mean Cα RMSD for active-site residues (warn if above)
+
+cphmd:
+  # Constant-pH MD (Phase 5A) — GROMACS native λ-dynamics + phbuilder
+  # Addresses pH-dependent protonation shifts critical for acid-pH pitcher enzymes.
+  ph_values: [2.5, 3.5, 5.0]     # Match pitcher fluid pH range across species
+  n_replicas: 3                   # Independent replicas per pH per variant
+  equilibration_ns: 10            # Equilibration before pH exchange attempts
+  production_ns: 50               # Production MD per replica (100 ns total per variant)
+  ph_exchange_attempts: 100       # MC pH swap attempts per step (phbuilder default)
+  titratable_residues: ["ASP", "GLU", "HIS", "LYS", "CYS", "TYR"]
+  # Run only on convergent sites classified as "functional" or "tradeoff" by FoldX×EVmutation
+  run_on_quadrants: ["functional_gain", "stability_function_tradeoff"]
+
+fep:
+  # Alchemical FEP/RBFE (Phase 5B) — GROMACS + pmx hybrid topology
+  # Quantifies ΔΔG_bind for substrate binding; mechanistically rigorous.
+  n_lambda_windows: 13            # 13 λ windows 0→1; standard for convergence
+  ns_per_window: 5                # 5 ns per λ window; can extend to 10 for tier 1
+  n_replicates: 3                 # Independent repeats for uncertainty estimation
+  estimator: "MBAR"               # Multistate Bennett acceptance ratio (pymbar)
+  skip_proline: true              # pmx does not support proline mutations; skip silently
+  max_targets: 10                 # FEP is expensive; limit to top hits from docking
+  # Substrates to use for binding ΔΔG (physiological, not chromogenic)
+  substrates_for_fep:
+    neprosins: "PQPQLPYP"
+    chitinases_gh19: "GlcNAc4"
+    rnase_t2: "ApA"
+    purple_acid_phosphatase: "phosphoserine"   # physiological PAP substrate (not pNPP)
+    nepenthesins: "VHLTPEEK"
+
+qmmm:
+  # QM/MM (Phase 5C) — ORCA 6 + GROMACS; reserved for ≤2 highest-priority targets
+  # Gate: only run if config["qmmm"]["enabled"] is true AND orca_binary is set.
+  enabled: false                  # Disabled by default; enable after FEP validates targets
+  orca_binary: ""                 # Path to ORCA 6 binary (free academic license required)
+  qm_method: "r2SCAN-3c"         # Composite DFT method (Grimme 2021); good speed/accuracy
+  basis_set: "def2-mTZVP"        # Adequate for reaction energy barriers
+  qm_region_radius_angstrom: 6.0  # Atoms within this radius of substrate included in QM region
+  max_targets: 2                  # Hard limit; QM/MM is extremely compute-intensive
+
 expression:
   datasets:
     - name: N_gracilis

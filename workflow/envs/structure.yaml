@@ -11,7 +11,9 @@ dependencies:
   - numpy
   - gemmi            # CIF/mmCIF parsing for AF3 output files
   - pip
+  - mdanalysis>=2.7    # Used by compare_ancestor_modern.py for active-site geometry
   - pip:
     - chai_lab>=0.6.1  # Fallback structure predictor (Apache 2.0)
     - boltz>=2.0       # Boltz-2: RNA-protein and binding affinity prediction (MIT)
     - ABCFold>=1.0     # Multi-predictor comparison wrapper
+    # tmalign not conda-installable; compile from source or use foldseek TM-score output

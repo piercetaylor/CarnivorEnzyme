@@ -1,0 +1,17 @@
+name: esm
+channels:
+  - conda-forge
+  - pytorch
+dependencies:
+  - python=3.11
+  - pytorch>=2.1                   # Required by fair-esm; GPU recommended
+  - pytorch-cuda=12.1              # Remove if running CPU-only
+  - click
+  - pandas
+  - numpy
+  - tqdm
+  - pip
+  - pip:
+    - fair-esm>=2.0.0              # ESM-2 protein language models (Meta Research)
+    # fair-esm provides: esm.pretrained.esm2_t33_650M_UR50D() and variants
+    # Models downloaded on first use to ~/.cache/torch/hub/
