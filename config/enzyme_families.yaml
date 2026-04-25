@@ -416,8 +416,12 @@ tier1:
 
       # --- Dionaea (dionain) ---
       Dionaea_muscipula:
-        - A0A0E3GLN3    # VERIFIED UniProt: Dionain-1, aspartic protease; Palfalvi 2020
-        - A0A0E3M338    # VERIFIED UniProt: Dionain-3, aspartic protease; Palfalvi 2020
+        - A0A0E3GLN3    # VERIFIED UniProt: Dionain-1, aspartic protease, 352 aa; Palfalvi 2020
+                        # NOTE: 352 aa is shorter than canonical nepenthesins (437 aa) — may be
+                        # partial prediction from the tetraploid Dionaea genome assembly.
+        - A0A0E3M338    # VERIFIED UniProt: Dionain-3, aspartic protease, 300 aa; Palfalvi 2020
+                        # NOTE: 300 aa is at the lower edge of expected range [280, 650].
+                        # Very likely a partial/truncated gene model. Flag for length filter in pipeline.
 
       # NOTE: Aldrovanda vesiculosa A1B aspartic protease — REMOVED (April 2026)
       # PRJNA918534 is organellar-genome only; no nuclear aspartic protease in NCBI.
@@ -426,10 +430,12 @@ tier1:
 
       # --- Cephalotus ---
       Cephalotus_follicularis:
-        - GAV28673.1    # GENOME: eukaryotic aspartyl protease, 461 aa (Fukushima 2017 genome)
-                        # TODO: verify this is an A1B subfamily member (PSI insert check)
-        - GAV69561.1    # GENOME: eukaryotic aspartyl protease, 457 aa
-                        # NOTE: Cephalotus AP was included in Fukushima 2017 convergence analysis
+        - GAV73214.1    # GENOME VERIFIED: Asp + SapB_2 + SapB_1 domain protein, 517 aa (Fukushima 2017 genome)
+                        # SapB_1 + SapB_2 ARE the Plant-Specific Insert (PSI) — A1B confirmed.
+                        # Cephalotus AP was included in Fukushima 2017 convergence analysis.
+        - GAV73783.1    # GENOME VERIFIED: Asp + SapB_2 + SapB_1 domain protein, 508 aa (second isoform)
+                        # REMOVED: GAV28673.1 was Pichia membranifaciens (yeast contamination in NCBI)
+                        # REMOVED: GAV69561.1 was UDP-glucuronosyltransferase, not AP
 
       # --- Sarraceniaceae (Ericales — origin 5) ---
       Sarracenia_purpurea:
@@ -676,7 +682,9 @@ non_carnivorous_homologs:
           the PSI insert as a lineage-specific acquisition in nepenthesins.
 
       Arabidopsis_thaliana_phytepsin:
-        accession: CAA64248.1        # AtAP1 / AT1G11910; vacuolar phytepsin, 497 aa
+        accession: NP_172655.1       # VERIFIED: AtAP1 / AT1G11910; aspartic proteinase A1, 506 aa
+                                     # CAA64248.1 was WRONG — that accession is Leek white stripe virus replicase.
+                                     # NP_172655.1 is the correct RefSeq for Arabidopsis aspartic proteinase A1.
         subfamily: A1B
         has_PSI_insert: true
         notes: >
@@ -692,7 +700,9 @@ non_carnivorous_homologs:
           outgroup perspective for A1B evolution.
 
       Cynara_cardunculus_cardosin:
-        accession: AAC31775.1        # Cardosin A from cardoon (Cynara cardunculus); 487 aa
+        accession: Q9XFX3            # VERIFIED UniProt: Procardosin-A (full precursor), 504 aa
+                                     # AAC31775.1 was WRONG — that accession is Bacillus subtilis phytase.
+                                     # PDB 1B5F (2.0 Å) is the processed 2-chain form; Q9XFX3 is full precursor.
         subfamily: A1B
         has_PSI_insert: true
         notes: >
