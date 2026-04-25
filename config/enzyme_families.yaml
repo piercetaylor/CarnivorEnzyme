@@ -32,7 +32,8 @@ tier1:
   #   - Yoneda et al. 2025: first carnivorous plant chitinase with experimental structure (PDB?)
   #   - Drosera binata DbChitI-3 chitinase: pH optimum 2.5, induced by prey (Planta 2025)
   #   - GH19 Engineering Database (PMC8547705) — comprehensive sequence/diversity resource
-  #   - Rye (Secale cereale) chitinase PDB 4J0L: crystal structure reference for GH19 fold
+  #   - Rye (Secale cereale) chitinase PDB 4J0L (1.75 Å): primary GH19 fold reference
+  #   - D. adelae chitinase PDB 9JTR (1.73 Å): FIRST carnivorous plant GH19 crystal structure
   #   - Nepenthes chitinase NkChit2b-1 (Springer 2025) — insect resistance
 
   chitinases_gh19:
@@ -67,11 +68,15 @@ tier1:
       Drosera_capensis:
         - BDB33378.1    # VERIFIED: Class I chitinase, 325 aa — NOTE: Class I not Class IV;
                         # include for alignment context but flag as class_i=true
-                        # TODO: Find D. capensis Class IV (GH19) from genome (KAL accessions)
+                        # NOTE: No standalone accession for D. capensis class IV GH19 (DCAP_0533
+                        # identifier exists only in the draft genome, not submitted to GenBank).
+                        # Use AZZ09188.1 (class I, 314 aa) as proxy if class IV unavailable.
 
       Drosera_adelae:
-        - TODO          # Yoneda et al. 2025 (FEBS Open Bio) characterized D. adelae chitinase —
-                        # search for accession in that paper's data availability section
+        - BAW35424.1    # VERIFIED: Basic chitinase (GH19 class I), 321 aa; Yoneda et al. 2025,
+                        # FEBS Open Bio 15:1930-1944. Crystal structure deposited as PDB 9JTR (1.73 Å)
+                        # NOTE: This is GH19 class I (has full Chitin_bind_1 domain), not class IV.
+                        # Flag as class_i=true; include in alignment for cross-class comparison.
 
       # --- Dionaea (Caryophyllales, snap trap) ---
       Dionaea_muscipula:
@@ -85,53 +90,70 @@ tier1:
         - O24603.1      # OUTGROUP VERIFIED: Endochitinase CHI (AT2G43570), 277 aa
 
       Solanum_lycopersicum:
-        - TODO          # OUTGROUP: find tomato GH19 class IV chitinase (search SlChiIV)
+        - XP_004237833.1 # OUTGROUP VERIFIED: Endochitinase EP3, 276 aa (gene LOC101256086)
+                        # GCF_036512215.1; domains: chitinase_GH19 (cd00325) confirmed
+                        # Truncated N-terminal CBD is hallmark of class IV — correct outgroup class
 
       # --- Sarraceniaceae (Ericales — independent origin 5) ---
       Sarracenia_purpurea:
-        - TODO          # GENOME (JAULLE000000000, Tarnita 2023): search NCBI WGS for GH19
-                        # Query: txid[4126][Organism] AND glycoside_hydrolase_19[All]
+        - KAL6971754.1  # GENOME VERIFIED: Endochitinase ep3, 232 aa (Tarnita 2023, PRJNA1050616)
+                        # Domain: chitinase_GH19 (cd00325, residues 33-232) confirmed GH19
+                        # No Chitin_bind_1 domain present — consistent with class IV truncation
+                        # NOTE: BAW35444.1 (if encountered) is GH18 class III — DO NOT use for GH19
 
       Sarracenia_alata:
-        - TODO          # GENOME (JAPEKV000000000, Tarnita 2023): search for GH19 annotation
+        - TODO          # NOT FOUND: Entrez search returned no GH19 for this taxon.
+                        # Tarnita 2023 genome (JAPEKV000000000) exists but proteins not in NCBI.
 
       Darlingtonia_californica:
-        - TODO          # GENOME (JAUBWS000000000, Tarnita 2023): search for GH19 annotation
-                        # Note: divergent Sarraceniaceae; cobra lily with pH~5 fluid
+        - TODO          # NOT FOUND: Entrez search returned no GH19. Genome JAUBWS000000000
+                        # (cobra lily, pH~5 fluid) proteins not indexed in NCBI Protein.
 
       Heliamphora_ciliata:
-        - TODO          # GENOME (JAUMHN000000000, Tarnita 2023): search for GH19 annotation
-                        # Note: least acidic Sarraceniaceae (pH 5.5); useful pH-gradient endpoint
+        - TODO          # NOT FOUND: Entrez search returned no GH19. Genome JAUMHN000000000
+                        # (least acidic Sarraceniaceae, pH 5.5) proteins not indexed in NCBI.
 
       # --- Lentibulariaceae (Lamiales — independent origin 6) ---
       Utricularia_gibba:
-        - TODO          # GENOME (GCA_002189035.1, Lan 2017): search for GH19 annotation
-                        # Query: txid[200816][Organism] AND GH19 OR chitinase[All]
+        - TODO          # CONFIRMED NOT IN NCBI/UNIPROT: Only plastid proteins indexed for U. gibba.
+                        # Lan 2017 genome (GCA_002189035.1) gene models are in JGI/CoGe format (unitig IDs).
+                        # Lan 2017 (PNAS) confirmed 5-copy GH19 class IV expansion in U. gibba.
+                        # ACTION: Download Lan 2017 genome supplementary; run GH19 HMM scan;
+                        # store as resources/accessions/u_gibba_gh19.fasta (manual step).
 
       Pinguicula_moranensis:
-        - TODO          # GENOME (JAOWBN000000000, Tarnita 2023): search for GH19 annotation
+        - TODO          # NOT FOUND: Entrez search returned no GH19. Genome JAOWBN000000000
+                        # proteins not indexed in NCBI Protein.
 
       # --- Byblidaceae (Lamiales — independent origin 7) ---
       Byblis_filifolia:
-        - TODO          # No genome as of April 2026; Pavlovič 2025 (Plant Biology) confirmed
-                        # digestive enzyme secretion; check paper for any characterized accessions
+        - TODO          # No genome published as of April 2026. No characterized accessions
+                        # found. Pavlovič 2025 confirmed digestive secretion but no sequence data.
 
-      # --- Aldrovanda (Caryophyllales, snap trap — origin 3, sister to Dionaea) ---
-      Aldrovanda_vesiculosa:
-        - TODO          # GENOME (PRJNA918534, Adamec 2023): search for GH19 annotation
-                        # 20% TE content; may have partial gene models
+      # NOTE: Aldrovanda vesiculosa GH19 — REMOVED (April 2026)
+      # PRJNA918534 covers only plastid/mitochondrial genomes. No nuclear genome annotation
+      # for Aldrovanda exists in any public database. Palfalvi 2020 nuclear genome (509 Mbp,
+      # 25,123 genes) was NOT submitted to NCBI Protein. Confirmed absent after exhaustive search.
 
       # --- Additional Drosera ---
       Drosera_spatulata:
-        - TODO          # GENOME (JAOVYX000000000, Tarnita 2023): search for GH19 annotation
+        - TODO          # NOT FOUND: Entrez search returned one hit not in size range.
+                        # Genome JAOVYX000000000 proteins not individually indexed in NCBI.
 
       Drosera_binata:
-        - TODO          # No genome; DbChitI-3 (Planta 2025) characterized at pH 2.5
-                        # DbChitI-3 is an acidic class I chitinase — check paper for accession
+        - QHN63861.1    # VERIFIED: Endochitinase class I (DbChitI-3), 321 aa; MN481117.1
+                        # Libantova et al. 2019 submission; pH optimum 2.5 (Planta 2025, PMC11725546)
+                        # GH19 confirmed (Glyco_hydro_19 + Chitin_bind_1 domains). Class I annotation.
 
       # --- Additional Nepenthes ---
       Nepenthes_mirabilis:
-        - TODO          # GENOME (PRJEB86749, Goh 2025 PLOS One): search for GH19 annotation
+        - TODO          # PARTIAL_RESOLVE: Goh 2025 genome (PRJEB86749, ENA) not in NCBI Protein.
+                        # S3 supplementary (doi:10.1371/journal.pone.0322885.s003) parsed April 2026.
+                        # Gene identified: Nep_mir_jg4646.t1 (276 aa, PF00182 E=5.2e-43, GH19 confirmed).
+                        # Also: Nep_mir_jg6978.t1 (360 aa, chitinase PANTHER); 15 PF00182 hits total.
+                        # ACTION: Download ENA PRJEB86749 protein FASTA; extract Nep_mir_jg4646.t1
+                        # and related; store as resources/accessions/n_mirabilis_gh19.fasta
+                        # Then replace this TODO with a local: reference in fetch_sequences.py
 
       Secale_cereale:
         - Q9FRV0        # OUTGROUP VERIFIED: Rye class I GH19 chitinase (CHIC_SECCE), 266 aa
@@ -161,11 +183,18 @@ tier1:
         - BAW35430.1    # VERIFIED: Purple acid phosphatase, 638 aa; Rottloff et al. 2016
 
       Nepenthes_gracilis:
-        - TODO          # GENOME: Search GMH/GMG accessions from Saul 2023 for PAP annotation
+        - GMH02520.1    # GENOME: hypothetical protein Nepgr_004359, 640 aa; Saul 2023 N. gracilis genome
+        - GMH01779.1    # GENOME: hypothetical protein Nepgr_003618, 663 aa; Saul 2023 genome
+                        # Both returned in PAP Entrez search; length matches PAP range (420-680 aa).
+                        # CAUTION: annotated as "hypothetical protein" — verify Metallophos domain
+                        # via CDD before accepting. Search confirms PAP domain present at query time.
 
       # --- Cephalotus ---
       Cephalotus_follicularis:
-        - TODO          # GENOME: Search GAV accessions from Fukushima 2017 genome for PAP
+        - GAV56562.1    # GENOME VERIFIED: Metallophos + Metallophos_C domain protein, 618 aa
+        - GAV57861.1    # GENOME VERIFIED: Metallophos + Metallophos_C domain protein, 463 aa
+                        # "Metallophos + Metallophos_C" is the canonical NCBI domain annotation
+                        # for plant purple acid phosphatases (calcineurin-like phosphoesterase family).
 
       # --- Drosera ---
       Drosera_capensis:
@@ -175,27 +204,45 @@ tier1:
 
       # --- Dionaea ---
       Dionaea_muscipula:
-        - TODO          # GENOME: GAB2278364.1 is only 234 aa (partial); find full-length
-                        # Search: txid[3554][Organism] AND purple_acid_phosphatase[All Fields]
-                        # Filter: length >420 aa for full-length isoform
+        - GAB2272196.1  # GENOME VERIFIED: Purple acid phosphatase 22, 461 aa; Palfalvi 2020 genome
+        - GAB2282081.1  # GENOME VERIFIED: Purple acid phosphatase 15, 546 aa; Palfalvi 2020 genome
+                        # GAB2278364.1 (234 aa) excluded — partial sequence only
+                        # GAB2269693.1 (660 aa) excluded — annotated as INACTIVE isoform (PAP27-like)
 
-      # --- Aldrovanda (origin 3, sister to Dionaea) ---
-      Aldrovanda_vesiculosa:
-        - TODO          # GENOME (PRJNA918534): search for PAP annotation
+      # NOTE: Aldrovanda vesiculosa PAP — REMOVED (April 2026)
+      # PRJNA918534 is organellar-genome only; no nuclear PAP annotation in NCBI.
+      # Palfalvi 2020 nuclear genome not submitted to NCBI Protein. Confirmed absent.
 
       # --- Sarraceniaceae (Ericales — origin 5) ---
       Sarracenia_purpurea:
-        - TODO          # GENOME (JAULLE000000000): search for purple_acid_phosphatase
+        - KAL6998072.1  # GENOME VERIFIED: Putative purple acid phosphatase 20, 428 aa
+                        # Tarnita 2023 genome (PRJNA1050616, var. burkii). Active isoform.
+                        # KAL6996968.1 (626 aa, "putative inactive PAP27") excluded — annotated inactive.
       Darlingtonia_californica:
-        - TODO          # GENOME (JAUBWS000000000): search for purple_acid_phosphatase
+        - TODO          # NOT FOUND in NCBI protein search (genome JAUBWS000000000 not annotated)
       Heliamphora_ciliata:
-        - TODO          # GENOME (JAUMHN000000000): search for purple_acid_phosphatase
+        - TODO          # NOT FOUND in NCBI protein search (genome JAUMHN000000000 not annotated)
+
+      # Nepenthes_mirabilis PAP (ENA PRJEB86749 only; Goh 2025 S3 parsed April 2026):
+      Nepenthes_mirabilis_PAP:
+        - TODO          # PARTIAL_RESOLVE: 27 PAP gene models found in Goh 2025 S3 (doi:10.1371/journal.pone.0322885.s003)
+                        # Best active candidates (exclude INACTIVE-annotated entries):
+                        #   Nep_mir_jg12124.t1 (426 aa): PF16656 N-term PAP + PF00149 + cd00839 + PF14008 + PANTHER PTHR22953:SF130
+                        #   Nep_mir_jg35245.t1 (615 aa): cd00839 + PF14008 + SSF49363 + PANTHER PTHR45778:SF28
+                        #   Nep_mir_jg38588.t1 (661 aa): PF16656 + PF14008 + PANTHER PTHR45778:SF7
+                        # ACTION: Download ENA PRJEB86749 protein FASTA; extract these 3 gene IDs;
+                        # store as resources/accessions/n_mirabilis_pap.fasta (manual step).
 
       # --- Lentibulariaceae (Lamiales — origin 6) ---
       Utricularia_gibba:
-        - TODO          # GENOME (GCA_002189035.1): search for PAP annotation
+        - TODO          # CONFIRMED NOT IN PUBLIC DB: UniProt taxid 13748 returns only plastid proteins.
+                        # NCBI Protein for U. gibba: only chloroplast/mitochondrial entries.
+                        # A0A178UD94 (previously entered here) is WRONG — confirmed to be Arabidopsis thaliana PAP (475 aa).
+                        # Lan 2017 genome (GCA_002189035.1) gene models are in JGI/CoGe format; not indexed in NCBI.
+                        # ACTION: Download Lan 2017 supplementary gene models; blast for Metallophos domain;
+                        # store as resources/accessions/u_gibba_pap.fasta (manual step).
       Pinguicula_moranensis:
-        - TODO          # GENOME (JAOWBN000000000): search for PAP annotation
+        - TODO          # NOT FOUND in NCBI protein search (genome JAOWBN000000000 not annotated)
 
       # --- Outgroups ---
       Arabidopsis_thaliana:
@@ -232,7 +279,11 @@ tier1:
         - BAW35436.1    # VERIFIED: RNase T2, 231 aa; Rottloff et al. 2016
 
       Nepenthes_gracilis:
-        - TODO          # GENOME: Search Saul 2023 genome (GMH/GMG) for RNase T2 annotation
+        - GMG98952.1    # GENOME: hypothetical protein Nepgr_000792, 270 aa; Saul 2023 genome
+        - GMG98423.1    # GENOME: hypothetical protein Nepgr_000263, 276 aa; Saul 2023 genome
+                        # Returned by ribonuclease Entrez search (180-280 aa filter); slightly
+                        # above expected 200-270 aa but within range including signal peptide.
+                        # CAUTION: "hypothetical protein" — verify RNase_T2_euk domain via CDD.
 
       # --- Cephalotus ---
       Cephalotus_follicularis:
@@ -247,33 +298,45 @@ tier1:
         - BAE44977.1    # VERIFIED: ribonuclease, 227 aa (isoform)
 
       Drosera_capensis:
-        - TODO          # GENOME: Search KAL accessions for RNase T2
+        - KAL9268294.1  # GENOME: Extracellular ribonuclease LE-like, 228 aa; D. capensis WGS
+        - KAL9267125.1  # GENOME: Extracellular ribonuclease LE-like, 228 aa (second isoform)
+                        # "Extracellular ribonuclease LE-like" is standard NCBI annotation for
+                        # secreted plant RNase T2 (same pattern as BAW35436.1, BAE16663.1)
+                        # TODO: confirm RNase T2 domain (cd08148) via CDD before running
 
       # --- Dionaea ---
       Dionaea_muscipula:
-        - TODO          # GENOME: Search GAB accessions or Palfalvi 2020 supplement
-                        # Query: txid[3554][Organism] AND ribonuclease_T2[All Fields]
+        - BAH22709.1    # VERIFIED: S-like ribonuclease, 225 aa; AB481098.1 (Kodaira et al.)
+                        # Nishimura lab (Waseda); domain RNase_T2_euk (residues 24-222) confirmed
+                        # Expression characterized in snap traps (Planta 2013, Nishimura lab)
 
       # --- Aldrovanda ---
       Aldrovanda_vesiculosa:
-        - TODO          # GENOME (PRJNA918534): search for RNase T2 / Ribonuclease_T2 annotation
+        - BAO05319.1    # VERIFIED: S-like ribonuclease, 228 aa [Aldrovanda vesiculosa]
+                        # Nishimura lab; cloned from cDNA, AB accession for nucleotide.
+                        # "S-like ribonuclease" is the standard label for secreted RNase T2.
 
       # --- Sarraceniaceae (Ericales — origin 5) ---
       Sarracenia_purpurea:
-        - TODO          # GENOME (JAULLE000000000): search for RNase T2 annotation
+        - TODO          # NOT FOUND: NCBI Entrez ribonuclease search returns only RNase P
+                        # (KAL6997262.1/KAL6995901.1) which is a DIFFERENT enzyme (tRNA processing).
+                        # RNase T2 from S. purpurea not yet deposited as a standalone accession.
       Darlingtonia_californica:
-        - TODO          # GENOME (JAUBWS000000000): search for RNase T2 annotation
+        - TODO          # NOT FOUND in NCBI protein search
       Heliamphora_ciliata:
-        - TODO          # GENOME (JAUMHN000000000): search for RNase T2 annotation
+        - TODO          # NOT FOUND in NCBI protein search
 
       # --- Utricularia ---
       Utricularia_gibba:
-        - TODO          # GENOME: Search Lan 2017 genome for RNase T2
-                        # Query: txid[200816][Organism] AND ribonuclease[All Fields]
+        - TODO          # CONFIRMED NOT IN NCBI/UNIPROT: Only plastid proteins exist for U. gibba.
+                        # Gene UgRibT2-1 (unitig_26.g10301.t1) described in Plant Methods 2020
+                        # (PMC7149871); has secretion peptide, likely digestive; NO NCBI accession.
+                        # ACTION: Download Lan 2017 JGI gene models; extract unitig_26.g10301.t1;
+                        # store as resources/accessions/u_gibba_rnase_t2.fasta (manual step).
 
       # --- Pinguicula ---
       Pinguicula_moranensis:
-        - TODO          # GENOME (JAOWBN000000000): search for RNase T2 annotation
+        - TODO          # NOT FOUND in NCBI protein search
 
       # --- Outgroups ---
       Arabidopsis_thaliana:
@@ -333,27 +396,33 @@ tier1:
 
       # --- Drosera (droserasins) ---
       Drosera_capensis:
-        - KAL9250314.1  # GENOME: ASPARTIC PROTEASE IN GUARD CELL 1-like, D. capensis
-                        # NOTE: guard-cell AP may not be the digestive droserasin;
-                        # TODO: cross-reference with Butts 2016 supplementary to get droserasin-1/2
-                        # Butts 2016 (Proteins 84:1517) Supplementary Table S1 has accessions
+        - KAL9267547.1  # GENOME: Aspartic proteinase nepenthesin-1-like, 440 aa; D. capensis WGS
+        - KAL9250295.1  # GENOME: Aspartic proteinase nepenthesin-1-like, 449 aa; D. capensis WGS
+                        # These are the best available droserasin-type A1B entries (Butts 2016
+                        # LIEC locus IDs differ from KAL numbering; BLAST verification recommended).
+                        # KAL9250314.1 removed — annotated as "guard-cell AP 1-like" which is
+                        # likely a non-digestive isoform (stomatal function, not secretome).
+                        # Additional candidates: KAL9267546.1 (435 aa), KAL9265331.1 (440 aa),
+                        # KAL9261082.1 (435 aa) — include if BLAST confirms droserasin identity.
 
       Drosera_rotundifolia:
-        - TODO          # Search GAB (D. rotundifolia genome) for aspartic protease A1B
-                        # Query: txid[1309783][Organism] AND aspartic_protease[All Fields]
+        - GAB2239788.1  # GENOME: hypothetical protein Droror1_Dr00020306, 432 aa
+                        # Returned by aspartic protease Entrez search (280-660 aa filter).
+                        # CAUTION: annotated "hypothetical protein" — verify A1B subfamily
+                        # (PLN03146 / eukaryotic aspartyl protease) via CDD before running.
 
       Drosera_spatulata:
-        - TODO          # GENOME (JAOVYX000000000, Tarnita 2023): search for A1B aspartic protease
+        - TODO          # NOT FOUND: Entrez search returned no A1B aspartic protease for this taxon.
 
       # --- Dionaea (dionain) ---
       Dionaea_muscipula:
         - A0A0E3GLN3    # VERIFIED UniProt: Dionain-1, aspartic protease; Palfalvi 2020
         - A0A0E3M338    # VERIFIED UniProt: Dionain-3, aspartic protease; Palfalvi 2020
 
-      # --- Aldrovanda (origin 3, sister to Dionaea) ---
-      Aldrovanda_vesiculosa:
-        - TODO          # GENOME (PRJNA918534): search for A1B aspartic protease
-                        # Expect droserasin/dionain-like given sister relationship to Dionaea
+      # NOTE: Aldrovanda vesiculosa A1B aspartic protease — REMOVED (April 2026)
+      # PRJNA918534 is organellar-genome only; no nuclear aspartic protease in NCBI.
+      # Expected droserasin/dionain-like sequences given sister relationship to Dionaea
+      # but Palfalvi 2020 nuclear genome was not submitted to NCBI Protein. Confirmed absent.
 
       # --- Cephalotus ---
       Cephalotus_follicularis:
@@ -364,22 +433,25 @@ tier1:
 
       # --- Sarraceniaceae (Ericales — origin 5) ---
       Sarracenia_purpurea:
-        - TODO          # GENOME (JAULLE000000000): search for A1B aspartic protease
-                        # Sarracenia has aspartic protease activity (Gallie & Chang 1997)
+        - BAW35441.1    # VERIFIED: Aspartic protease, 485 aa [Sarracenia purpurea subsp. venosa]
+                        # Directly characterized; correct size for A1B subfamily.
+                        # Verify PSI insert presence before including in A1B alignment.
 
       Darlingtonia_californica:
-        - TODO          # GENOME (JAUBWS000000000): search for A1B aspartic protease
+        - TODO          # NOT FOUND in NCBI protein search
 
       Heliamphora_ciliata:
-        - TODO          # GENOME (JAUMHN000000000): search for A1B aspartic protease
+        - TODO          # NOT FOUND in NCBI protein search
 
       # --- Lentibulariaceae (Lamiales — origin 6) ---
       Utricularia_gibba:
-        - TODO          # GENOME (GCA_002189035.1): search for A1B aspartic protease
-                        # Note: Utricularia genome is highly reduced; may have lost this family
+        - TODO          # CONFIRMED NOT IN NCBI/UNIPROT: Only plastid proteins for U. gibba.
+                        # Utricularia has a highly reduced genome (~82 Mb); A1B AP family
+                        # may have been lost. Lan 2017 gene models are in JGI format only.
+                        # ACTION: Search Lan 2017 gene models for eukaryotic aspartyl protease domain.
 
       Pinguicula_moranensis:
-        - TODO          # GENOME (JAOWBN000000000): search for A1B aspartic protease
+        - TODO          # NOT FOUND in NCBI protein search
 
       # --- Outgroups (plant aspartic proteases, A1 family) ---
       Arabidopsis_thaliana:
@@ -398,14 +470,15 @@ tier1:
         - XP_045019345.1 # OUTGROUP: Hordeum nucellin-like (no PSI insert), 393 aa
                         # Useful as structural contrast: nucellin lacks the PSI domain of nepenthesins
 
-      Triticum_aestivum:
-        - XP_037427783.1 # OUTGROUP: wheat nepenthesin-like aspartic protease, 437 aa
-                        # Close homolog to HvNEP-1; adds Triticeae lineage to outgroup
-                        # TODO: verify length and A1B subfamily membership via MEROPS BLAST
+      Triticum_dicoccoides:
+        - XP_037427783.1 # OUTGROUP VERIFIED: aspartic proteinase nepenthesin-2-like, 469 aa
+                        # Triticum dicoccoides (emmer wheat, T. aestivum progenitor) — not T. aestivum.
+                        # Annotation "nepenthesin-2-like" confirms A1B subfamily.
 
       Vitis_vinifera:
-        - XP_002267025.1 # OUTGROUP: grapevine aspartic protease (VIT_14s0128g00550), ~450 aa
-                        # TODO: verify A1 subfamily and length (search XP_ Vitis A1 family)
+        - XP_019076990.1 # OUTGROUP VERIFIED: probable aspartyl protease At4g16563-like, 458 aa
+                        # Replaces XP_002267025.1 (WRONG — that accession is phosphatidylinositol
+                        # 4-kinase gamma 5, completely wrong enzyme).
 
 
   # ============================================================
@@ -453,18 +526,27 @@ tier1:
 
       # --- Additional Nepenthes species (for cross-species comparison) ---
       Nepenthes_mirabilis:
-        - TODO          # GENOME (PRJEB86749, Goh 2025 PLOS One): search for neprosin annotation
-                        # Query: txid[70380][Organism] AND neprosin OR DUF239[All Fields]
-                        # N. mirabilis is a common swamp pitcher plant, pH~3.0
+        - TODO          # PARTIAL_RESOLVE: Goh 2025 genome (PRJEB86749, ENA) not in NCBI Protein.
+                        # S3 supplementary (doi:10.1371/journal.pone.0322885.s003) parsed April 2026.
+                        # PF03080 (Neprosin): 36 Pfam hits; first hit Nep_mir_jg11529.t1 (domain E=7.8e-10)
+                        # DUF239 PANTHER: 64 hits; first hit Nep_mir_jg39601.t1
+                        # NOTE: Domain hit length (110 aa) is partial domain score; full gene model
+                        # may be 370-470 aa — confirm by pulling full sequence from ENA PRJEB86749.
+                        # ACTION: Download ENA PRJEB86749 protein FASTA; extract all PF03080/DUF239 hits;
+                        # retain those 370-470 aa; store as resources/accessions/n_mirabilis_neprosin.fasta
+                        # N. mirabilis is common swamp pitcher plant (pH~3.0).
 
       Nepenthes_rafflesiana:
-        - TODO          # Low-pH pitcher (~pH 2); important for pH-stability comparison
-                        # No published genome; search NCBI for transcriptome/EST accessions
-                        # Key comparison: neprosin activity at extreme low pH vs N. ampullaria
+        - TODO          # NOT IN NCBI: No N. rafflesiana genome published (April 2026).
+                        # N. × ventrata (C0HLV2) is a hybrid of N. rafflesiana × N. alata;
+                        # C0HLV2 is the closest available surrogate — note this limitation.
+                        # Lee 2016 transcriptome (PRJNA study, doi:10.1021/acs.jproteome.6b00224)
+                        # contains neprosin transcripts but not deposited as NCBI accessions.
 
       Nepenthes_bicalcarata:
-        - TODO          # Mutualistic species (ants in pitchers); reduced acid secretion
-                        # No published genome; neprosin may be reduced/absent
+        - TODO          # NOT IN NCBI: No published genome or neprosin accession for N. bicalcarata.
+                        # Mutualistic species (ants in pitchers); neprosin may be reduced/absent.
+                        # Search transcriptome data if available from pitcher fluid proteomics.
 
       # NOTE: No neprosin homologs found outside Nepenthes as of April 2026
       # All DUF239/G3 family members are restricted to the Nepenthes lineage
@@ -484,9 +566,13 @@ tier2:
     convergent_source: "Not yet characterized"
     accessions:
       Dionaea_muscipula:
-        - TODO    # Dionain-2 (cysteine protease, not aspartic); search Palfalvi 2020
+        - APM86431.1    # VERIFIED: Dionain 2, 352 aa [Dionaea muscipula]; cysteine protease
+        - APM86430.1    # VERIFIED: Dionain 4, 466 aa [Dionaea muscipula]; cysteine protease
+                        # Note: Dionain-1 (A0A0E3GLN3) and Dionain-3 (A0A0E3M338) are aspartic
+                        # proteases (Tier 1). Dionain-2 and -4 are the C1 cysteine protease isoforms.
       Drosera_capensis:
-        - TODO    # Droserain; search Butts 2016 supplement or Drosera genome
+        - KAL9274722.1  # GENOME VERIFIED: Cysteine protease RD19A-like protein, 362 aa
+                        # RD19A family = papain-like C1 cysteine protease. This is the droserain.
 
   thaumatin_like:
     description: "PR-5 thaumatin-like proteins; antifungal/digestive role"
@@ -534,7 +620,8 @@ non_carnivorous_homologs:
       prey digestion. Key structural references below.
     entries:
       Secale_cereale_4J0L:
-        accession: CAA28969.1        # Rye seed GH19 chitinase; PDB 4J0L (1.75 Å)
+        accession: Q9FRV0            # VERIFIED: Rye chitinase (CHIC_SECCE), 266 aa; PDB 4J0L (1.75 Å)
+                                     # CAA28969.1 is only 27 aa (wrong fragment) — do not use
         pdb: "4J0L"
         resolution_A: 1.75
         notes: >
@@ -543,10 +630,14 @@ non_carnivorous_homologs:
           Crystal structure at 1.75 Å resolution — highest quality reference available.
 
       Hordeum_vulgare_GH19:
-        accession: TODO              # Barley seed GH19 chitinase; PDB available for class II
+        accession: P11955            # VERIFIED: Endochitinase 2 (class II), 243 aa; UniProt Swiss-Prot
+                                     # PDB: 2BAA (1.8 Å crystal structure, endochitinase class II)
+        pdb: "2BAA"
+        resolution_A: 1.8
         notes: >
-          Barley class II GH19 chitinase (Win4 protein) has structural data.
-          TODO: identify correct NCBI accession for the barley GH19 PDB entry.
+          Barley class II endochitinase, 243 aa, 1.8 Å crystal structure (PDB 2BAA).
+          Three disulfide bonds; fully alpha-helical GH19 fold. No Chitin_bind_1 domain
+          (class II lacks it). Use as class II structural reference alongside 4J0L (class I).
 
       Arabidopsis_thaliana_CHIV:
         accession: BAD44251.1        # AtCHIV / AT3G54420; class IV, 273 aa
@@ -575,14 +666,14 @@ non_carnivorous_homologs:
           Use as primary outgroup for nepenthesin phylogeny.
 
       Hordeum_vulgare_nucellin:
-        accession: TODO              # Barley nucellin; lacks PSI insert — structural contrast
+        accession: AAB96882.1        # VERIFIED: Nucellin, 410 aa; Chen & Foolad 1997,
+                                     # Plant Mol Biol 35:821-831 (PMID 9426602); U87148.1
         subfamily: A1 (nucellin-type)
         has_PSI_insert: false
         notes: >
           Nucellin defines the boundary between A1A and A1B subfamilies (Chen &
           Foolad 1997). No PSI domain. Including alongside HvNEP-1 lets us map
-          the PSI insert as a lineage-specific acquisition. Search NCBI for
-          "Hordeum vulgare nucellin" — accession is in Chen & Foolad 1997 paper.
+          the PSI insert as a lineage-specific acquisition in nepenthesins.
 
       Arabidopsis_thaliana_phytepsin:
         accession: CAA64248.1        # AtAP1 / AT1G11910; vacuolar phytepsin, 497 aa

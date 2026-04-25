@@ -109,3 +109,7 @@ hellbenderModules.txt
 
 #Progress.md
 PROGRESS.md
+
+# Local environment files (never commit)
+.env
+
