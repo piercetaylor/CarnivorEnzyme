@@ -23,6 +23,7 @@ phylogeny:
 
 convergence:
   posterior_threshold: 0.8
+  min_lineages: 2
 
 structure:
   primary_predictor: alphafold3       # Confirmed available on Hellbender A100/H100 nodes
