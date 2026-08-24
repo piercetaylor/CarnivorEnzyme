@@ -104,6 +104,69 @@ carnivorous_species:
     genome_source: "Goh et al. 2025, PLOS One (common swamp pitcher plant genome)"
     tier: 1
 
+  Nepenthes_ampullaria:
+    taxid: 150949
+    code: Namp
+    genome: none                   # No published genome as of 2026-08-24; RNA-seq only (PMC4707257)
+    pitcher_pH: 5.0                # High-pH pitcher species (semi-detritivorous); see
+                                    # enzyme_families.yaml methods_benchmark.neprosins comment
+                                    # "high-pH pitcher, pH~5 — useful for pH comparison"
+    clade: Caryophyllales
+    order: Caryophyllales
+    trap: pitfall_pitcher
+    carnivory_origin: 1
+    expression_sra: null
+    genome_source: null
+    tier: 1
+    notes: "Added 2026-08-24 (audit/10_config_gaps_and_consistency_test.md): has real accessions (ARA95696.1, ARA95695.1) in methods_benchmark.neprosins, useful for within-Nepenthes pitcher-pH case study. RNA-seq data exists (Front. Plant Sci., PMC4707257) but no genome assembly published."
+
+  Nepenthes_bicalcarata:
+    taxid: 330715
+    code: Nbic
+    genome: none                   # No published genome or accession found (2026-08-24)
+    pitcher_pH: null
+    clade: Caryophyllales
+    order: Caryophyllales
+    trap: pitfall_pitcher
+    carnivory_origin: 1
+    expression_sra: null
+    genome_source: null
+    tier: 2
+    notes: "Added 2026-08-24 (audit/10_config_gaps_and_consistency_test.md) as a lightweight placeholder: TODO-only in methods_benchmark.neprosins (no NCBI accession, genome, or transcriptome located). Mutualistic species (ant-associated); neprosin may be reduced/absent per the TODO note there. tier:2 reflects TODO-only status — flesh out if/when a real accession is found."
+
+  Nepenthes_rafflesiana:
+    taxid: 150990
+    code: Nraf
+    genome: none                   # No published genome as of 2026-08-24
+    pitcher_pH: null                # Reported to decrease from ~3.7 to ~1.9 over pitcher maturation
+                                     # (age-dependent); no single representative value assigned
+    clade: Caryophyllales
+    order: Caryophyllales
+    trap: pitfall_pitcher
+    carnivory_origin: 1
+    expression_sra: null
+    genome_source: null
+    tier: 2
+    notes: "Added 2026-08-24 (audit/10_config_gaps_and_consistency_test.md) as a lightweight placeholder: TODO-only in methods_benchmark.neprosins. N. x ventrata (C0HLV2) is used as a surrogate accession there since N. rafflesiana is one of N. x ventrata's parent species; no N. rafflesiana-specific NCBI accession located. tier:2 reflects TODO-only status."
+
+  Nepenthes_ventrata:
+    taxid: 1744888                  # NCBI taxonomy: "Nepenthes ventricosa x Nepenthes alata"
+                                     # (the parentage NCBI records under this taxid; commonly sold/
+                                     # cited horticulturally as Nepenthes x ventrata). Verified via
+                                     # NCBI eutils esearch/esummary against the taxonomy db, 2026-08-24.
+    code: Nven
+    genome: none                    # Only the mitochondrial genome is published (PMC7800874);
+                                     # no nuclear genome assembly as of 2026-08-24
+    pitcher_pH: null
+    clade: Caryophyllales
+    order: Caryophyllales
+    trap: pitfall_pitcher
+    carnivory_origin: 1
+    expression_sra: null
+    genome_source: null
+    tier: 1
+    notes: "Added 2026-08-24 (audit/10_config_gaps_and_consistency_test.md): source of C0HLV2 (Neprosin, mature form), the sequence used for the 7ZVA/7ZVB/7ZVC/7ZU8 crystal structures — the only experimental structure for any carnivorous plant digestive enzyme (see methods_benchmark.neprosins in enzyme_families.yaml). Horticultural hybrid, commonly N. ventricosa x N. alata."
+
   # --- Drosera (Caryophyllales, sticky trap) ---
   Drosera_capensis:
     taxid: 3563
@@ -158,6 +221,25 @@ carnivorous_species:
     genome_source: null
     tier: 2
     notes: "DbChitI-3 acidic chitinase characterized 2025 (Planta), active at pH 2.5"
+
+  Drosera_rotundifolia:
+    taxid: 173423
+    code: Drot
+    genome: PRJDB18922             # DDBJ BioProject; assembly "Droro_R1_v2" (WGS prefix BAAGII01),
+                                    # 139x coverage (Illumina HiSeq X Ten + Nanopore GridION).
+                                    # Verified directly by NCBI efetch on protein accession
+                                    # GAB2242148.1 (DBSOURCE line), 2026-08-24. No public GCA/GCF
+                                    # assembly accession located via web search as of this date —
+                                    # if one is published later, replace this BioProject accession.
+    pitcher_pH: null
+    clade: Caryophyllales
+    order: Caryophyllales
+    trap: sticky_flypaper
+    carnivory_origin: 1
+    expression_sra: null
+    genome_source: "Droro_R1_v2 assembly, BioProject PRJDB18922 (DDBJ); verified via NCBI protein record GAB2242148.1, 2026-08-24"
+    tier: 1
+    notes: "Added 2026-08-24 (audit/10_config_gaps_and_consistency_test.md): has real (non-TODO) accessions in tier1.chitinases_gh19_class_iv (GAB2242148.1, GAB2242147.1) and tier1.aspartic_proteases_a1b_homology (GAB2239788.1). Round-leaved sundew; classic model Drosera species, widely distributed Northern Hemisphere."
 
   # --- Dionaea (Caryophyllales, snap trap) ---
   Dionaea_muscipula:
@@ -376,6 +458,19 @@ outgroup_species:
     expression_sra: null
     tier: 1
     notes: "HvNEP-1 (UniProt M0W9B2) is a characterized nepenthesin-like aspartic protease — ideal outgroup for nepenthesin A1B alignment. Also has nucellin (no PSI insert) for structural comparison."
+
+  Triticum_dicoccoides:
+    taxid: 85692
+    code: Tdic
+    genome: GCA_002162155.1        # WEWSeq v1.0 (Avni et al. 2017, Science)
+    pitcher_pH: null
+    clade: Poales
+    order: Poales
+    trap: null
+    carnivorous: false
+    expression_sra: null
+    tier: 1
+    notes: "Added 2026-08-24 (audit/10_config_gaps_and_consistency_test.md). Wild emmer wheat (Triticum turgidum subsp. dicoccoides; T. aestivum progenitor) — not T. aestivum. Outgroup for tier1.aspartic_proteases_a1b_homology and methods_benchmark.nepenthesins (XP_037427783.1, annotated aspartic proteinase nepenthesin-2-like, confirming A1B subfamily). Avni Y et al. 2017, Science 357:93-97 (WEWSeq v1.0 genome)."
 
   # --- GH19 chitinase structural reference ---
   Secale_cereale:

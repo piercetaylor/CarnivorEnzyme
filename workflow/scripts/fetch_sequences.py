@@ -170,9 +170,21 @@ def main(
     # (single-origin families retained as structure-prediction/case-study targets,
     # e.g. nepenthesins/neprosins — see audit/03_merops_restructure_and_neprosin_rescope.md)
     # families. Key sets don't overlap; if they ever do, tier1 wins.
-    all_families: dict = {**config.get("methods_benchmark", {}), **config.get("tier1", {})}
+    mb_families = config.get("methods_benchmark", {})
+    t1_families = config.get("tier1", {})
+    collision = mb_families.keys() & t1_families.keys()
+    if collision:
+        raise ValueError(
+            f"family key(s) defined in both tier1 and methods_benchmark: {sorted(collision)}"
+        )
+    all_families: dict = {**mb_families, **t1_families}
     family_filter: set[str] = {f.strip() for f in families.split(",") if f.strip()}
     if family_filter:
+        unknown = family_filter - set(all_families)
+        if unknown:
+            raise click.BadParameter(
+                f"Unknown family key(s): {sorted(unknown)}. Available: {sorted(all_families)}"
+            )
         logger.info("Restricting to families: %s", sorted(family_filter))
 
     # Rate: 3 req/s without key, 10/s with key
@@ -186,6 +198,11 @@ def main(
         if family_filter and family_key not in family_filter:
             continue
 
+        if "expected_length_aa" not in family_data:
+            logger.warning(
+                "Family %s has no expected_length_aa — length QC disabled for this family",
+                family_key,
+            )
         exp_min, exp_max = family_data.get("expected_length_aa", [0, 99999])
         species_map: dict = family_data.get("accessions", {})
         family_dir = output_root / family_key
@@ -198,6 +215,11 @@ def main(
 
         for species, acc_list in species_map.items():
             if not isinstance(acc_list, list):
+                logger.error(
+                    "MALFORMED  %s / %s: accessions must be a list, got %s — skipping",
+                    family_key, species, type(acc_list).__name__,
+                )
+                n_failed += 1
                 continue
             species_records: list[SeqRecord] = []
 
@@ -211,6 +233,20 @@ def main(
                 record = _fetch(acc, email, api_key or None, rate_delay)
                 if record is None:
                     logger.error("FAILED     %s / %s / %s", family_key, species, acc)
+                    n_failed += 1
+                    continue
+
+                # Plain GenBank/DDBJ IDs have no pipes (e.g. "BAD07474.1"). Swiss-Prot-sourced
+                # records — whether from UniProt REST or NCBI's efetch of a Swiss-Prot entry —
+                # use "sp|ACCESSION|ENTRY_NAME"; the accession is field index 1, NOT the last
+                # field (verified live: last field is the entry name, e.g. "ASPR_HORVU").
+                id_parts = record.id.split("|")
+                fetched_acc = id_parts[1] if len(id_parts) >= 2 else record.id
+                if fetched_acc.split(".")[0] != acc.split(".")[0]:
+                    logger.error(
+                        "ACCESSION MISMATCH %s / %s: requested %s, got %s (%s) — excluding",
+                        family_key, species, acc, record.id, record.description[:80],
+                    )
                     n_failed += 1
                     continue
 

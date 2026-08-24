@@ -260,3 +260,98 @@ never purged by the re-fetch — harmless (unread by any Snakemake rule, no bad 
 deleted in a future pass.
 
 See audit/05_live_refetch_verification.md
+
+## 2026-08-24 — T9: Fix silent-failure patterns in 04_run_hmmer_scan.sh
+
+Fixed four issues in `workflow/scripts/braker2/04_run_hmmer_scan.sh`, each verified by running
+the actual bash/python logic in isolation with synthetic stand-in files, then confirmed end-to-end
+against the real edited script with stubbed `hmmsearch`/`hmmfetch` binaries (no real hmmer binary
+or proteome data available in this environment): (1) the zero-hits guard was unreachable under
+`set -euo pipefail` because `grep -v '^#'` exits 1 on an all-comment `.tblout`, killing the script
+silently before the intended "0 hits" message — added `|| true`; (2) if all 5 target proteomes are
+missing the script exited 0 with a misleading success summary — added an `n_scanned` counter gated
+before the `=== Summary ===` block, exits 1 with an explicit error if nothing was scanned; (3)
+hmmsearch hit IDs absent from the proteome FASTA (e.g. stale `.tblout`) were silently dropped and
+the printed count wrongly blamed the length filter — now reports resolved-vs-total counts and
+warns explicitly on any unresolvable IDs; (4) a leftover pre-split family-name path
+(`..._chitinases_gh19.faa`) in the final "Next steps" example was renamed to
+`..._chitinases_gh19_class_iv.faa` (confirmed via full-file grep: zero remaining stale references).
+
+See audit/09_hmmer_scan_script_fixes.md
+
+## 2026-08-24 — T10: Fix config structural gaps, add consistency test
+
+Moved `chitinases_gh19_class_i` from `tier1:` to `methods_benchmark:` in
+`config/enzyme_families.yaml` (verbatim, all comments/accessions preserved) — its 3 species
+(Drosera_capensis, Drosera_adelae, Drosera_binata) all share `carnivory_origin: 1`, so under
+`convergence.min_lineages: 2` it could never produce a cross-lineage convergence result, and
+because `Snakefile:44-49` derives `FAMILIES` from `tier1.keys()` alone, it was silently baked
+into every convergence-related Snakemake target (phase2/phase3a/phase4a/phase5d/rule all) as a
+guaranteed header-only empty output — the exact "zero rows, exit 0" false-positive signature
+this remediation effort targets. Same treatment already applied to nepenthesins/neprosins on
+2026-08-22 for the identical single-origin reason.
+
+Found and fixed 7 species-config gaps via a real PyYAML cross-reference script (before: 7
+missing; after: 0): added `Drosera_rotundifolia`, `Nepenthes_ampullaria`,
+`Nepenthes_bicalcarata`, `Nepenthes_rafflesiana`, `Nepenthes_ventrata` to
+`species.yaml.carnivorous_species` and `Triticum_dicoccoides` to `species.yaml.outgroup_species`
+(all taxids/genome accessions WebSearch/NCBI-eutils-verified, none invented; two TODO-only
+Nepenthes species given lighter-weight tier:2 placeholders per judgment call); renamed the
+malformed `Nepenthes_mirabilis_PAP` accession key in `tier1.purple_acid_phosphatase` to the
+correct `Nepenthes_mirabilis` (confirmed no collision — plain rename, not a merge).
+
+Added `tests/test_config_consistency.py` (5 test functions covering the requested (a)-(d) plus
+one extra direct regression guard) and manually ran every assertion's logic via `python3 -c`
+against the real config files (pytest itself isn't installed in this environment) — all 5 pass,
+including a round-trip check of `detect_convergence.py`'s `_seq_id_to_species()` against every
+species.yaml name, which also re-confirms the species-name-vs-code keying fix from
+`audit/07_detect_convergence_deep_fix.md` is still correctly in place.
+
+See audit/10_config_gaps_and_consistency_test.md
+
+## 2026-08-24 — T8: Harden fetch_sequences.py error handling
+
+Fixed 5 silent-failure modes in `workflow/scripts/fetch_sequences.py` found in code review: (1)
+malformed non-list `accessions:` entries now log ERROR + increment `n_failed` instead of vanishing
+silently; (2) `--families` now validates requested keys against the real family set and raises
+`click.BadParameter` on a stale/typo'd key instead of silently running an empty fetch; (3) fetched
+records are now checked for an accession mismatch *before* being relabeled with the requested
+accession string, so a wrong-protein NCBI/UniProt resolution is caught and excluded rather than
+silently mislabeled as evidence-destroying (self-corrected a bug in the initial mismatch-check
+implementation during verification: UniProt/Swiss-Prot `sp|ACCESSION|NAME` records need field
+index 1, not the last field, confirmed via live fetch of `P42210`); (4) `tier1`/`methods_benchmark`
+key collisions now raise `ValueError` instead of silently resolving via dict-merge precedence; (5)
+families missing `expected_length_aa` now log a WARNING that length QC is disabled (currently
+prophylactic — all 7 fetched families have the key). All 5 fixes verified by real CLI execution
+against the real config and/or scratch throwaway YAMLs/output dirs. See
+audit/08_fetch_sequences_hardening.md.
+
+## 2026-08-24 — T7: Deep fix for detect_convergence.py (species keying, .state parsing, fabricated fallbacks)
+
+Fixed 4 independent defects in `workflow/scripts/detect_convergence.py`, EACH of which alone caused
+the script to emit zero convergent sites with no error (the prior remediation `96ab469` fixed none
+of them — verified by re-running the pre-fix code). (1) `_load_species_meta()` keyed its dict by the
+4-letter `code` field while every tree leaf/FASTA header is `{Species_name}|{accession}`, so
+`_seq_id_to_species()` matched nothing — now registers each species under BOTH the species-name and
+code keys; also subsumes HIGH-3 by raising on a carnivorous species missing `carnivory_origin`
+instead of silently defaulting it to `0` (which the detector then drops). Verified against the real
+`config/species.yaml`: all 18 carnivorous entries have an origin, all 5 origins present, no
+ValueError — no latent data problem. (2) `_parse_state_file()` read `parts[-1]` (a `p_V` float
+string) as the ancestral amino acid and never used the header it parsed; its `AA_COLS.index(aa) + 2`
+offset was ALSO off by one (real header is `Node Site State p_A …`, so `p_A` is index 3, not 2), and
+a bare `except` swallowed the resulting ValueError into `posterior = 0.0`. Now resolves `State` and
+`p_<State>` by header name, lets a missing column propagate, and raises if 0 internal nodes parse.
+Format verified against the IQ-TREE Command Reference; confirmed IQ-TREE's AA order
+`ARNDCQEGHILKMFPSTWYV` does match the file's `AA_COLS` constant. (3) `_load_tree()` treated
+IQ-TREE `-bb/-alrt` support labels (`85.7/97`) as node names, so they never matched `.state` NodeN
+labels — support labels are now detected and moved aside, plus a defensive tree-vs-.state node-name
+overlap check in `main()` that aborts loudly instead of yielding zero rows. (4)
+`_get_carnivorous_branch_lengths()` returned a fabricated `1.0` and `_background_substitution_rate()`
+a magic `0.01` when they had no data; both feed `mu_per_site` for the Poisson test, so the pipeline
+was producing publication-shaped p-values from invented inputs. Both now raise. All fixes verified by
+real `python3` execution against the real config and a synthetic IQ-TREE-format `.state` file;
+end-to-end run proves old code = 0 rows and fixed code = 1 row on identical input (`ete3` is not
+installed, so `_load_tree` itself is trace-verified only — its extracted `_is_support_label`
+predicate and the `main()` overlap check were executed).
+
+See audit/07_detect_convergence_deep_fix.md

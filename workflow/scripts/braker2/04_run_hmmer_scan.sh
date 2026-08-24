@@ -62,6 +62,8 @@ SPECIES=(
     "sarracenia_alata"
 )
 
+n_scanned=0
+
 for species in "${SPECIES[@]}"; do
     proteome="${PROTEOME_DIR}/${species}.faa"
 
@@ -71,6 +73,7 @@ for species in "${SPECIES[@]}"; do
     fi
 
     echo "=== $species ==="
+    n_scanned=$((n_scanned + 1))
 
     for family in "${!FAMILY_HMMS[@]}"; do
         pfam_acc="${FAMILY_HMMS[$family]}"
@@ -94,7 +97,11 @@ for species in "${SPECIES[@]}"; do
             > /dev/null
 
         # Extract hit sequence IDs (col 1, skip comment lines)
-        hit_ids=$(grep -v '^#' "$hit_tbl" | awk '{print $1}' | sort -u)
+        # NOTE: `|| true` is required because grep -v exits 1 when the .tblout has
+        # zero non-comment lines (a legitimate "hmmsearch found nothing" result).
+        # Under `set -euo pipefail`, an unguarded grep failure here would kill the
+        # whole script silently before the -z check below ever runs.
+        hit_ids=$(grep -v '^#' "$hit_tbl" | awk '{print $1}' | sort -u || true)
 
         if [[ -z "$hit_ids" ]]; then
             echo "  $family: 0 hits"
@@ -120,11 +127,18 @@ for r in kept:
     r.description = f"family=${family} species=${species} source=braker2"
 
 SeqIO.write(kept, out_fa, "fasta")
-print(f"  ${family}: {len(hit_ids)} hmmer hits → {len(kept)} kept (≥{min_len} aa) → {out_fa}")
+if len(hits) < len(hit_ids):
+    print(f"  WARNING: {len(hit_ids) - len(hits)} hmmer hit ID(s) not found in proteome FASTA — check .tblout matches the proteome file")
+print(f"  ${family}: {len(hit_ids)} hmmer hits → {len(hits)} resolved → {len(kept)} kept (≥{min_len} aa) → {out_fa}")
 EOF
 
     done
 done
+
+if (( n_scanned == 0 )); then
+    echo "ERROR: no proteomes found under $PROTEOME_DIR — run 00_download_genomes.sh through 03_extract_proteins.sh first" >&2
+    exit 1
+fi
 
 echo ""
 echo "=== Summary ==="
@@ -134,5 +148,5 @@ echo "Next steps:"
 echo "  1. Inspect hits manually (check lengths, review annotations)"
 echo "  2. Add local: entries to enzyme_families.yaml:"
 echo "     e.g.  Darlingtonia_californica:"
-echo "             - local:resources/accessions/tarnita2023_by_family/darlingtonia_californica_chitinases_gh19.faa"
+echo "             - local:resources/accessions/tarnita2023_by_family/darlingtonia_californica_chitinases_gh19_class_iv.faa"
 echo "  3. Re-run fetch_sequences.py (after adding local: support)"
