@@ -134,7 +134,7 @@ def _is_todo(value: str) -> bool:
     "--families",
     type=str,
     default="",
-    help="Comma-separated list of tier1 family keys to fetch (default: all).",
+    help="Comma-separated list of tier1/methods_benchmark family keys to fetch (default: all).",
 )
 @click.option(
     "--min-length-fraction",
@@ -166,7 +166,11 @@ def main(
     with config_path.open(encoding="utf-8") as fh:
         config = yaml.safe_load(fh)
 
-    tier1: dict = config.get("tier1", {})
+    # Fetch both tier1 (cross-lineage convergence targets) and methods_benchmark
+    # (single-origin families retained as structure-prediction/case-study targets,
+    # e.g. nepenthesins/neprosins — see audit/03_merops_restructure_and_neprosin_rescope.md)
+    # families. Key sets don't overlap; if they ever do, tier1 wins.
+    all_families: dict = {**config.get("methods_benchmark", {}), **config.get("tier1", {})}
     family_filter: set[str] = {f.strip() for f in families.split(",") if f.strip()}
     if family_filter:
         logger.info("Restricting to families: %s", sorted(family_filter))
@@ -178,7 +182,7 @@ def main(
     n_skipped = 0
     n_failed = 0
 
-    for family_key, family_data in tier1.items():
+    for family_key, family_data in all_families.items():
         if family_filter and family_key not in family_filter:
             continue
 

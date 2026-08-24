@@ -8,17 +8,53 @@
 #   pitcher_pH:     measured or estimated fluid pH (null = not applicable or unknown)
 #   clade/order:    angiosperm order
 #   trap:           trap morphology
-#   carnivory_origin: integer grouping independent origins (1=Caryophyllales, 4=Oxalidales, etc.)
+#   carnivory_origin: integer grouping independent origins (1=Caryophyllales, 2=Oxalidales, etc.; see CARNIVORY ORIGINS block below)
 #   expression_sra: SRA BioProject accession for RNA-seq (null if not used)
 #   genome_source:  citation for genome assembly
 #   tier:           1=core pipeline, 2=extended atlas
 #
 # CARNIVORY ORIGINS (independent evolutionary events):
-#   1 — Caryophyllales: Nepenthes, Drosera, Dionaea, Aldrovanda, Drosophyllum (same order)
-#   4 — Oxalidales: Cephalotus
-#   5 — Ericales: Sarracenia, Darlingtonia, Heliamphora (Sarraceniaceae family)
-#   6 — Lamiales: Utricularia, Genlisea, Pinguicula (Lentibulariaceae)
-#   7 — Lamiales: Byblis (Byblidaceae; distinct from Lentibulariaceae)
+#   Corrected 2026-08-22 (audit/02_carnivory_origin_reassignment.md). Previously this
+#   header said "1 — Caryophyllales" (a single origin) while the per-species
+#   carnivory_origin fields below actually encoded THREE separate Caryophyllales
+#   origins (Nepenthes=1, Drosera=2, Dionaea/Aldrovanda=3) — an internal
+#   contradiction. Verified against Fleck & Jobson (2023, Plants 12(19):3356,
+#   https://doi.org/10.3390/plants12193356): "Within the Caryophyllales, carnivory
+#   may have evolved once, only to be subsequently lost once or multiple times
+#   during the divergence that led to the flypaper-trapping monotypic family
+#   Drosophyllaceae, as well as Ancistrocladaceae + Dioncophyllaceae," with
+#   Nepenthaceae and Droseraceae described as sister clades from that single
+#   common carnivorous ancestor. Corroborated by Fleischmann et al. (2018,
+#   in Ellison & Adamec eds., Carnivorous Plants: Physiology, Ecology, and
+#   Evolution, Oxford University Press, ch. 3, doi:10.1093/oso/9780198779841.003.0003),
+#   §3.2, quoted verbatim from the primary text: "In Nepenthales, carnivory appears
+#   to have evolved only once ... The carnivorous lineage ('carnivorous Nepenthales:'
+#   Droseraceae, Nepenthaceae, Drosophyllaceae, Dioncophyllaceae, Ancistrocladaceae)
+#   is sister to an entirely noncarnivorous clade." The same chapter states
+#   "Nepenthales were treated by APG IV (2016) as the non-core group of
+#   Caryophyllales," so its "Nepenthales" is exactly the clade Fleck & Jobson
+#   discuss as "within the Caryophyllales" — the two sources are commensurable and
+#   agree on a single origin. Fleischmann et al. further state: "Molecular data
+#   indicate unequivocally that Dionaea and Aldrovanda are sister to each other, and
+#   jointly sister to Drosera; these three genera of Droseraceae ... in turn, are
+#   sister to Nepenthes (Nepenthaceae)" — directly supporting one shared origin for
+#   all four genera represented below. All Caryophyllales carnivorous species below
+#   therefore share ONE carnivory_origin value.
+#
+#   CITATION CORRECTION (opus checker, 2026-08-22): an earlier revision of this
+#   header attributed to Fleischmann et al. (2018) the phrase "once (or twice) in
+#   the non-core Caryophyllales (i.e., Nepenthales)". That phrase does NOT appear in
+#   the chapter. The chapter's only "or twice" hedge concerns ERICALES ("whether
+#   carnivory arose once or twice in Ericales ... Sarraceniaceae and Roridula"), not
+#   Caryophyllales. Its Caryophyllales statement is unhedged ("only once"). The
+#   misquote has been replaced above with directly-verified primary text.
+#
+#   1 — Caryophyllales: Nepenthes, Drosera, Dionaea, Aldrovanda (single shared
+#       origin; Drosophyllum not yet present as a species entry in this file)
+#   2 — Oxalidales: Cephalotus
+#   3 — Ericales: Sarracenia, Darlingtonia, Heliamphora (Sarraceniaceae family)
+#   4 — Lamiales: Utricularia, Genlisea, Pinguicula (Lentibulariaceae)
+#   5 — Lamiales: Byblis (Byblidaceae; distinct from Lentibulariaceae)
 #   NOTE: Roridula (Ericales, Roridulaceae) excluded — lacks endogenous digestive enzymes
 
 # ============================================================
@@ -77,7 +113,7 @@ carnivorous_species:
     clade: Caryophyllales
     order: Caryophyllales
     trap: sticky_flypaper
-    carnivory_origin: 2
+    carnivory_origin: 1
     expression_sra: null
     genome_source: "Butts et al. 2016, Proteins (transcriptome/partial genome)"
     tier: 1
@@ -90,7 +126,7 @@ carnivorous_species:
     clade: Caryophyllales
     order: Caryophyllales
     trap: sticky_flypaper
-    carnivory_origin: 2
+    carnivory_origin: 1
     expression_sra: null
     genome_source: null
     tier: 1
@@ -104,7 +140,7 @@ carnivorous_species:
     clade: Caryophyllales
     order: Caryophyllales
     trap: sticky_flypaper
-    carnivory_origin: 2
+    carnivory_origin: 1
     expression_sra: null
     genome_source: "Tarnita et al. 2023, PMC10662931"
     tier: 2
@@ -117,7 +153,7 @@ carnivorous_species:
     clade: Caryophyllales
     order: Caryophyllales
     trap: sticky_flypaper
-    carnivory_origin: 2
+    carnivory_origin: 1
     expression_sra: null
     genome_source: null
     tier: 2
@@ -132,7 +168,11 @@ carnivorous_species:
     clade: Caryophyllales
     order: Caryophyllales
     trap: snap_trap
-    carnivory_origin: 3
+    # carnivory_origin shared with Nepenthes/Drosera/Aldrovanda: Dionaea is nested
+    # within Droseraceae, which is sister to Nepenthaceae under a single common
+    # carnivorous ancestor per Fleck & Jobson 2023 (Plants 12:3356) and
+    # Fleischmann et al. 2018 (Ch. 3 in Ellison & Adamec eds.) — see header note.
+    carnivory_origin: 1
     expression_sra: PRJEB12493     # Bemm et al. 2016
     genome_source: "Palfalvi et al. 2020, Genome Research"
     tier: 1
@@ -146,7 +186,12 @@ carnivorous_species:
     clade: Caryophyllales
     order: Caryophyllales
     trap: snap_trap
-    carnivory_origin: 3            # Sister to Dionaea; shared snap-trap origin
+    # carnivory_origin shared with Nepenthes/Drosera/Dionaea: Aldrovanda is nested
+    # within Droseraceae (sister to Dionaea), which is sister to Nepenthaceae under
+    # a single common carnivorous ancestor per Fleck & Jobson 2023 and Fleischmann
+    # et al. 2018 — see header note. Previously coded as a separate origin (3) from
+    # Nepenthes(1)/Drosera(2); that split is not supported by the retrieved literature.
+    carnivory_origin: 1
     expression_sra: null
     genome_source: "Adamec et al. 2023 (BioProject PRJNA918534)"
     tier: 2
@@ -160,7 +205,7 @@ carnivorous_species:
     clade: Oxalidales
     order: Oxalidales
     trap: pitfall_pitcher
-    carnivory_origin: 4
+    carnivory_origin: 2
     expression_sra: PRJDB4470      # Fukushima et al. 2017
     genome_source: "Fukushima et al. 2017, Nature Ecology & Evolution"
     tier: 1
@@ -174,7 +219,7 @@ carnivorous_species:
     clade: Ericales
     order: Ericales
     trap: pitfall_pitcher
-    carnivory_origin: 5
+    carnivory_origin: 3
     expression_sra: null
     genome_source: "Tarnita et al. 2023, PMC10662931"
     tier: 1
@@ -187,7 +232,7 @@ carnivorous_species:
     clade: Ericales
     order: Ericales
     trap: pitfall_pitcher
-    carnivory_origin: 5
+    carnivory_origin: 3
     expression_sra: null
     genome_source: "Tarnita et al. 2023, PMC10662931"
     tier: 2
@@ -200,7 +245,7 @@ carnivorous_species:
     clade: Ericales
     order: Ericales
     trap: pitfall_pitcher
-    carnivory_origin: 5
+    carnivory_origin: 3
     expression_sra: null
     genome_source: "Tarnita et al. 2023, PMC10662931"
     tier: 2
@@ -214,7 +259,7 @@ carnivorous_species:
     clade: Ericales
     order: Ericales
     trap: pitfall_pitcher
-    carnivory_origin: 5
+    carnivory_origin: 3
     expression_sra: null
     genome_source: "Tarnita et al. 2023, PMC10662931"
     tier: 2
@@ -229,7 +274,7 @@ carnivorous_species:
     clade: Lamiales
     order: Lamiales
     trap: suction_bladder
-    carnivory_origin: 6
+    carnivory_origin: 4
     expression_sra: null
     genome_source: "Lan et al. 2017"
     tier: 1
@@ -242,7 +287,7 @@ carnivorous_species:
     clade: Lamiales
     order: Lamiales
     trap: sticky_flypaper
-    carnivory_origin: 6
+    carnivory_origin: 4
     expression_sra: null
     genome_source: "Tarnita et al. 2023, PMC10662931"
     tier: 2
@@ -255,7 +300,7 @@ carnivorous_species:
     clade: Lamiales
     order: Lamiales
     trap: sticky_flypaper
-    carnivory_origin: 6
+    carnivory_origin: 4
     expression_sra: null
     genome_source: null
     tier: 2
@@ -269,7 +314,7 @@ carnivorous_species:
     clade: Lamiales
     order: Lamiales
     trap: sticky_flypaper
-    carnivory_origin: 7            # Byblidaceae separate from Lentibulariaceae
+    carnivory_origin: 5            # Byblidaceae separate from Lentibulariaceae
     expression_sra: null
     genome_source: null
     tier: 2

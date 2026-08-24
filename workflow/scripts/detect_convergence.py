@@ -35,17 +35,29 @@ _AA_SET = set(AA_COLS)
 # ---------------------------------------------------------------------------
 
 def _load_species_meta(species_yaml: Path) -> dict:
-    """Return {species_code: {carnivorous, carnivory_origin, ...}}."""
-    with open(species_yaml) as fh:
+    """Return {species_code: {carnivorous, carnivory_origin, name}}."""
+    with open(species_yaml, encoding="utf-8") as fh:
         data = yaml.safe_load(fh)
     meta = {}
-    for entry in data.get("species", []):
-        code = entry.get("code") or entry.get("name", "").replace(" ", "_")
+
+    # Load carnivorous species
+    for species_name, entry in data.get("carnivorous_species", {}).items():
+        code = entry.get("code") or species_name.replace(" ", "_")
         meta[code] = {
-            "carnivorous": bool(entry.get("carnivorous", False)),
+            "carnivorous": True,
             "carnivory_origin": entry.get("carnivory_origin", 0),
-            "name": entry.get("name", code),
+            "name": species_name,
         }
+
+    # Load outgroup (non-carnivorous) species
+    for species_name, entry in data.get("outgroup_species", {}).items():
+        code = entry.get("code") or species_name.replace(" ", "_")
+        meta[code] = {
+            "carnivorous": False,
+            "carnivory_origin": 0,
+            "name": species_name,
+        }
+
     return meta
 
 
