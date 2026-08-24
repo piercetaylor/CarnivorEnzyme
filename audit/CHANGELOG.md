@@ -355,3 +355,128 @@ installed, so `_load_tree` itself is trace-verified only — its extracted `_is_
 predicate and the `main()` overlap check were executed).
 
 See audit/07_detect_convergence_deep_fix.md
+
+## 2026-08-24 — T13: Distinguish real I/O errors from legitimate zero-hits in 04_run_hmmer_scan.sh
+
+Replaced the blanket `|| true` around the `grep -v '^#' "$hit_tbl" | awk '{print $1}' | sort -u`
+pipeline in `workflow/scripts/braker2/04_run_hmmer_scan.sh` with logic that isolates the `grep`
+call and inspects its exit code: `grep_rc == 1` (no non-comment lines — a legitimate empty hmmer
+result) is still tolerated and reported as "0 hits", but `grep_rc >= 2` (missing/unreadable file,
+real I/O error) now aborts the script with a descriptive `ERROR:` message instead of being
+silently misreported as "0 hits". `awk`/`sort` are no longer swallowed by the same blanket guard.
+Verified with 3 scratch tests against synthetic `.tblout` files (comment-only file, nonexistent
+file, real hit lines) — all three transcripts in audit/13_hmmer_scan_error_distinction.md.
+
+See audit/13_hmmer_scan_error_distinction.md
+
+## 2026-08-24 — T12: fetch_sequences.py — make silently-empty species/families visible
+
+Fixed two remaining silent-failure patterns in `workflow/scripts/fetch_sequences.py` left over
+from T8's hardening pass: (1) a species whose every fetched record was excluded by the per-family
+length filter wrote no FASTA and left no trace beyond a generic `n_skipped` increment that never
+affects the exit code — now logs a `ZERO SURVIVING` WARNING per occurrence and is tallied in a new
+`n_species_all_filtered` counter reported in the final summary; (2) a family whose every accession
+is still `TODO` (or, extended beyond the original ask, whose every species gets entirely
+length-filtered) logged a single WARNING and moved on — now logs `ZERO OUTPUT` at ERROR level and
+the family key is collected into a `families_zero_output` list, unconditionally reported at ERROR
+level in the final summary. Neither condition forces `sys.exit(1)` by itself (only real fetch
+failures do): both can be legitimate, already-documented outcomes (e.g. `enzyme_families.yaml`'s
+own comment on Dionain-3, `A0A0E3M338`, flags it as "very likely a partial/truncated gene model...
+Flag for length filter in pipeline" — forcing a hard failure on exactly the outcome the filter is
+designed to produce would be wrong), so visibility (not exit-code severity) is the fix.
+
+Checked the real config first: none of the 7 currently-fetched families (`tier1` +
+`methods_benchmark`) has zero non-TODO accessions — Fix 2's family-level TODO case is prophylactic
+today. But a live run against the real config with real NCBI/UniProt fetches found **2 real,
+previously-invisible occurrences of Fix 1's condition**: `purple_acid_phosphatase/
+Sarracenia_purpurea` (`KAL6998072.1`, 428 aa, just under the family's 431 aa cutoff — the same
+drop the T5 checker had found only via manual arithmetic after the fact) and
+`aspartic_proteases_a1b_homology/Dionaea_muscipula` (both of its two accessions, 352 aa and 300
+aa, fall under the family's 365 aa cutoff). Both fixes additionally verified against a disposable
+synthetic YAML built to force both conditions deterministically (`species_all_filtered=1`,
+`families_zero_output=1`, both named explicitly in the summary). All commands run for real against
+either the live config or scratch YAMLs/output dirs; `results/sequences/` was never touched.
+
+See audit/12_fetch_sequences_visibility_fixes.md
+
+## 2026-08-24 — T14: Close test blind spots, fix CLAUDE.md/README tier-list drift
+
+Closed two test-coverage gaps in `tests/test_config_consistency.py` found by review: (a) added
+`test_carnivorous_and_outgroup_species_disjoint`, guarding against a species listed in both
+`carnivorous_species:` and `outgroup_species:` in `config/species.yaml` — `detect_convergence.py`'s
+`_load_species_meta()` loads carnivorous first then outgroups second, so the second silently
+overwrites the first, reclassifying a carnivorous species as non-carnivorous
+(`carnivory_origin=0`); the pre-existing union-based `_known_species_keys()` helper cannot detect
+this by construction. Verified: duplicated `Cephalotus_follicularis` into a scratch copy of
+`species.yaml` and confirmed all 5 pre-existing tests still passed (the blind spot is real), the
+new test fails against that scratch file, and passes against the real file (no duplication exists
+today). (b) Added `test_species_codes_are_unique` for the same silent-overwrite class keyed on
+`code:` instead of species name — verified the same way with a scratch duplicate `code`. (c) Added
+`test_tier1_families_span_min_lineages_carnivory_origins`, asserting every `tier1:` family's
+non-TODO accessions span `>= config.yaml`'s live `convergence.min_lineages` (2) distinct
+`carnivory_origin` values — the exact invariant that motivated moving
+`chitinases_gh19_class_i`/`nepenthesins`/`neprosins` out of `tier1:` in T3/T10. Verified against
+the real config (all 4 `tier1:` families pass, `rnase_t2` right at the n=2 threshold) and against
+a scratch config with `aspartic_proteases_a1b_homology` reduced to a single origin (test
+correctly fails). (d) Fixed `test_seq_id_to_species_roundtrip_on_species_names`, whose docstring
+claimed to guard `_load_species_meta()`'s species-name-vs-code keying fix but actually built its
+`known_species` set independently from `species.yaml` rather than from the loader's real output —
+verified by reverting the keying fix in a scratch copy of `detect_convergence.py` and confirming
+the old test body still passed (0 failures) against the broken loader while the fixed body (now
+sourcing `known_species` from `module._load_species_meta(...).keys()`) correctly failed (29
+failures, one per species). All 8 tests in the file (5 original, one docstring-fixed, 3 new) pass
+against the real, unmodified config files, run manually via `python3` since `pytest` is still not
+installed in this environment.
+
+Fixed a doc-drift violation: `CLAUDE.md` §3 still listed `chitinases_gh19_class_i` as Tier 1 item
+#2 — directly contradicting its own "this list must match `config/enzyme_families.yaml`'s actual
+`tier1:` keys exactly" rule, left stale since the T10 move to `methods_benchmark:`. Renumbered
+Tier 1 to its real 4 items and moved `chitinases_gh19_class_i` into the Methods Benchmark
+subsection with the same single-origin framing as its `nepenthesins`/`neprosins` siblings.
+`README.md` had the matching gap (GH19 Class I row missing the `methods_benchmark.` prefix its
+siblings have, plus a stale "retained tier1" lead-in sentence) — fixed the same way. Verified
+programmatically (not by eyeballing): a `python3` script PyYAML-parses the real
+`tier1`/`methods_benchmark` key sets and confirms both documents' family lists now match exactly.
+
+See audit/14_test_blindspots_and_doc_drift.md
+
+## 2026-08-24 — T11: Architectural fix for ancestral-reconstruction/tree-rooting mismatch
+Split IQ-TREE into two passes so ancestral state reconstruction runs on the SAME topology the
+pipeline consumes downstream, eliminating the node-correspondence problem rather than patching it.
+Pass 1 (`infer_tree`) now does topology search only (`-bb`/`-alrt`, no `-ancestral`); `root_tree.py`
+additionally emits a label-stripped rooted tree and the matched outgroup tip labels; a new
+`ancestral_reconstruction` rule runs `run_ancestral.py`, which reuses pass 1's ModelFinder verdict
+and calls `iqtree3 -m <model> -te <rooted.plain> -o <outgroups> --ancestral`, then verifies that the
+emitted `.asr.treefile` and `.asr.state` describe exactly the same node set and that the topology
+was unchanged. `convergence.smk` and `ancestral_structure.smk` now consume that self-consistent
+pair. Added `wildcard_constraints` to the Snakefile (`{family}.asr.treefile` was otherwise also
+matchable by `infer_tree` with `family="…asr"`).
+
+In `detect_convergence.py`: deleted `_is_support_label()` and the `NodeN` counter in `_load_tree()`
+— the script no longer invents any node name — and replaced the set-overlap heuristic with
+node-by-node checks that raise if any internal node, or any leaf's direct parent, fails to resolve
+in `.state`, or if any tree leaf is missing from the alignment. Folded in the requested visibility
+fix: unmapped leaves are now counted and listed at WARNING (was one `debug` line), per-origin leaf
+counts are logged at INFO, and the run raises when fewer distinct carnivory origins are represented
+than `--min-lineages` (`--allow-insufficient-origins` to override for single-origin
+methods_benchmark families) — origins 2 and 5 rest on a single species each, so one unparsed leaf
+label could silently delete a whole independent origin.
+
+Verified by real execution, not documentation reading: downloaded and ran the official IQ-TREE
+3.1.3 Windows binary against a 9-taxon AliSim-simulated alignment using this pipeline's real
+`{Species_name}|{accession}` labels. Reproduced the shipped bug end-to-end (overlap check passed on
+one coincidental `Node1` match while 6/7 nodes resolved to nothing, exit 0, empty output); confirmed
+`-alrt` + `--ancestral` emits compound `Node3/99.7/100` labels AND drops the root label while
+`.state` still lists it; confirmed IQ-TREE logs `rooted tree` then silently unroots a rooted `-te`
+input, dissolving the root vertex; confirmed `-B` is rejected with `-te` ("Ultrafast bootstrap does
+not work with -fast, -te or -n option"); confirmed marginal ASR is root-invariant (max |Δp| = 1e-5
+over 7 nodes × 300 sites). Then ran the fixed chain end-to-end (7/7 nodes and 9/9 leaf ancestors
+resolve, vs 1/7 and 2/9 before), a positive control recovering a planted 3-origin P→W substitution
+at exactly the planted position with exactly the planted origin set, four negative controls all
+raising, `snakemake -n` showing correct 4-rule chaining with no ambiguity, and the existing 13-test
+suite passing. NOT verified: Snakemake *execution* of the new rules (its shell layer fails on this
+Windows laptop for even a trivial `echo` rule) and behaviour at real alignment scale — both need a
+Hellbender run. Also surfaced a pre-existing, unrelated `ChildIOException` in `retrieve.smk` that
+currently blocks any full-workflow Snakemake run; left unfixed and flagged for follow-up.
+
+See audit/11_ancestral_reconstruction_architecture_fix.md

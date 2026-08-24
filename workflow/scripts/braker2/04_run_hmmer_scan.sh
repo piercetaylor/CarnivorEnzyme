@@ -97,11 +97,23 @@ for species in "${SPECIES[@]}"; do
             > /dev/null
 
         # Extract hit sequence IDs (col 1, skip comment lines)
-        # NOTE: `|| true` is required because grep -v exits 1 when the .tblout has
-        # zero non-comment lines (a legitimate "hmmsearch found nothing" result).
-        # Under `set -euo pipefail`, an unguarded grep failure here would kill the
-        # whole script silently before the -z check below ever runs.
-        hit_ids=$(grep -v '^#' "$hit_tbl" | awk '{print $1}' | sort -u || true)
+        # NOTE: grep -v exits 1 when the .tblout has zero non-comment lines (a
+        # legitimate "hmmsearch found nothing" result) — that must be tolerated
+        # under `set -euo pipefail`. But grep exit code >=2 (unreadable/missing
+        # file, real I/O error) is a different situation entirely and must NOT be
+        # swallowed: a blanket `|| true` around the whole pipeline can't tell
+        # "no hits" apart from "couldn't read the file" or a failure in awk/sort,
+        # and previously reported all of them identically as "0 hits". Isolate the
+        # grep call so its exit code can be inspected before deciding to continue.
+        set +e
+        raw_hits=$(grep -v '^#' "$hit_tbl")
+        grep_rc=$?
+        set -e
+        if (( grep_rc > 1 )); then
+            echo "ERROR: failed to read $hit_tbl (grep exit code $grep_rc)" >&2
+            exit 1
+        fi
+        hit_ids=$(printf '%s\n' "$raw_hits" | awk '{print $1}' | sort -u)
 
         if [[ -z "$hit_ids" ]]; then
             echo "  $family: 0 hits"

@@ -35,8 +35,11 @@ rule extract_ancestor:
     are masked as 'X' and excluded from downstream FoldX analysis.
     """
     input:
-        state="results/phylogenies/{family}.state",
-        tree="results/phylogenies/{family}.rooted.treefile",
+        # Both files must come from the SAME IQ-TREE --ancestral invocation: the .state
+        # Node column names the internal nodes of .asr.treefile and of no other tree.
+        # See audit/11_ancestral_reconstruction_architecture_fix.md.
+        state="results/phylogenies/{family}.asr.state",
+        tree="results/phylogenies/{family}.asr.treefile",
     output:
         fasta="results/ancestral/{family}.mrca_ancestor.fa",
         stats="results/ancestral/{family}.mrca_stats.tsv",

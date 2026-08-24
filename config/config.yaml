@@ -20,6 +20,10 @@ alignment:
 phylogeny:
   model: MFP
   bootstrap: 1000
+  binary: iqtree3                 # Executable name; set to 'iqtree' if the cluster module exposes it as such
+  # Used by the ancestral pass ONLY when the pass-1 .iqtree report contains no
+  # ModelFinder verdict (i.e. `model:` above was set to an explicit model, not MFP).
+  fallback_model: LG+G4
 
 convergence:
   posterior_threshold: 0.8

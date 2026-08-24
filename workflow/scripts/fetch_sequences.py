@@ -193,6 +193,8 @@ def main(
     n_fetched = 0
     n_skipped = 0
     n_failed = 0
+    n_species_all_filtered = 0
+    families_zero_output: list[str] = []
 
     for family_key, family_data in all_families.items():
         if family_filter and family_key not in family_filter:
@@ -278,7 +280,12 @@ def main(
         # ── Pass 2: median-length filter ─────────────────────────────────────
         all_lengths = [len(r.seq) for recs in fetched.values() for r in recs]
         if not all_lengths:
-            logger.warning("No sequences fetched for family %s — check YAML TODOs", family_key)
+            logger.error(
+                "ZERO OUTPUT family %s — no non-TODO accession resolved to a sequence "
+                "(check YAML TODOs); no FASTA written for any species in this family",
+                family_key,
+            )
+            families_zero_output.append(family_key)
             continue
 
         median_len = median(all_lengths)
@@ -288,6 +295,7 @@ def main(
             family_key, len(all_lengths), round(median_len), cutoff,
         )
 
+        family_wrote_any = False
         for species, records in fetched.items():
             kept: list[SeqRecord] = []
             for rec in records:
@@ -302,15 +310,52 @@ def main(
                     n_skipped += 1
 
             if not kept:
+                # Every accession for this species was fetched successfully but then
+                # excluded by the length filter — distinct from a TODO/fetch-failure skip:
+                # the species is silently absent from the family's output directory even
+                # though n_skipped alone doesn't distinguish "never fetched" from "fetched
+                # then entirely filtered out". Surface it explicitly (see
+                # audit/12_fetch_sequences_visibility_fixes.md for the reasoning on why this
+                # does not also force n_failed/exit 1: several documented accessions in
+                # enzyme_families.yaml are known-short partial gene models where this is an
+                # expected, not erroneous, outcome).
+                n_species_all_filtered += 1
+                logger.warning(
+                    "ZERO SURVIVING %s / %s: %d/%d fetched record(s) below length cutoff "
+                    "(%.0f aa) — no FASTA written for this species",
+                    family_key, species, len(records), len(records), cutoff,
+                )
                 continue
             out_path = family_dir / f"{species}.fa"
             SeqIO.write(kept, str(out_path), "fasta")
+            family_wrote_any = True
             logger.info("  WROTE    %s → %s (%d record(s))", species, out_path, len(kept))
 
+        if not family_wrote_any:
+            logger.error(
+                "ZERO OUTPUT family %s — every species had all records filtered by length; "
+                "no FASTA written for any species in this family",
+                family_key,
+            )
+            families_zero_output.append(family_key)
+
     logger.info(
-        "Done. fetched=%d  skipped/filtered=%d  failed=%d",
-        n_fetched, n_skipped, n_failed,
+        "Done. fetched=%d  skipped/filtered=%d  failed=%d  species_all_filtered=%d  "
+        "families_zero_output=%d",
+        n_fetched, n_skipped, n_failed, n_species_all_filtered, len(families_zero_output),
     )
+    if n_species_all_filtered:
+        logger.warning(
+            "%d species had ZERO surviving sequences after length filtering (fetched "
+            "successfully but every record was below the length cutoff) — see 'ZERO "
+            "SURVIVING' lines above for which species/family",
+            n_species_all_filtered,
+        )
+    if families_zero_output:
+        logger.error(
+            "%d famil(y/ies) produced ZERO output sequences: %s",
+            len(families_zero_output), families_zero_output,
+        )
     if n_failed > 0:
         logger.error(
             "%d accession(s) failed — re-run with --verbose to debug; "

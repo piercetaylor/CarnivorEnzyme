@@ -1,11 +1,24 @@
 #!/usr/bin/env python3
 """Identify convergent amino acid substitutions across independent carnivorous plant lineages.
 
-Reads a trimmed multiple sequence alignment, an IQ-TREE rooted gene tree, an IQ-TREE
-.state file (ancestral sequence reconstruction), and species metadata. For each alignment
+Reads a trimmed multiple sequence alignment, the gene tree and the `.state` file written
+by a single IQ-TREE ancestral-reconstruction run, and species metadata. For each alignment
 position, detects cases where ≥2 independent carnivorous lineages independently acquired
 the same derived amino acid from the same ancestral state. Tests statistical significance
 with a Poisson model and applies BH FDR correction.
+
+IMPORTANT — which tree to pass to --tree:
+    The `.state` file's `Node` column refers to the internal-node labels of the treefile
+    that the SAME IQ-TREE invocation wrote; its header says so verbatim ("Ancestral state
+    reconstruction for all nodes in <prefix>.treefile"). `--tree` must therefore be that
+    `<prefix>.treefile` (in this pipeline: `results/phylogenies/{family}.asr.treefile`,
+    produced by run_ancestral.py), never the separately-rooted `{family}.rooted.treefile`
+    and never the pass-1 `{family}.treefile`. Rooting a tree after the fact moves the
+    IQ-TREE labels onto different clades and can introduce nodes that have no `.state`
+    entry at all, which previously produced silently wrong ancestral states.
+
+    Passing the wrong tree is now a hard failure, not a degraded run: every internal node
+    must be labelled and every label must resolve in the `.state` file.
 
 Output TSV columns: family, aln_position, ancestral_aa, derived_aa, lineages,
 n_lineages, min_posterior, p_value, q_value_bh, category
@@ -179,63 +192,147 @@ def _parse_state_file(state_path: Path) -> dict[str, dict[int, tuple[str, float]
     return states
 
 
-def _is_support_label(name: str) -> bool:
-    """True if an internal-node label is a bootstrap/support value, not a node name.
+def _load_asr_tree(tree_path: Path) -> ete3.Tree:
+    """Load the treefile written by the IQ-TREE ancestral-reconstruction run.
 
-    IQ-TREE run with `-bb 1000 -alrt 1000` writes support values into internal node
-    labels, e.g. '85.7/97' or '100/100/95' or plain '97'. These are NOT node names and
-    will never match the NodeN labels used in the .state file, so they must not be
-    treated as pre-existing names.
-    """
-    if not name:
-        return False
-    parts = name.split("/")
-    if not all(parts):
-        return False
-    for part in parts:
-        try:
-            float(part)
-        except ValueError:
-            return False
-    return True
+    This function deliberately does NOT invent names for unlabelled internal nodes.
+    IQ-TREE labels every internal node of the tree it writes alongside a `.state` file
+    (`Node1`, `Node2`, ... including the root), so an unlabelled internal node means the
+    caller passed some other tree — a bootstrap-support tree, or a tree that has been
+    rerooted after the fact. Generating `NodeN` names locally would silently collide with
+    IQ-TREE's own, unrelated `NodeN` numbering and attribute ancestral states to the wrong
+    clade, which is exactly the failure this pipeline previously shipped.
 
-
-def _load_tree(tree_path: Path) -> ete3.Tree:
-    """Load and return an ete3 tree, naming unnamed internal nodes.
-
-    Internal-node labels that are really support values (see _is_support_label) are
-    moved to `node.support_label` and replaced with a NodeN name, so that they do not
-    masquerade as .state file node names. Genuine names (e.g. 'Node12' written by
-    IQ-TREE's ancestral reconstruction) are left untouched.
+    Raises ValueError if any internal node is unlabelled or any label is duplicated.
     """
     tree = ete3.Tree(str(tree_path), format=1)
-    counter = 1
-    for node in tree.traverse("postorder"):
+
+    unlabelled: list[str] = []
+    seen: set[str] = set()
+    duplicated: set[str] = set()
+    for node in tree.traverse("preorder"):
         if node.is_leaf():
             continue
-        if _is_support_label(node.name):
-            node.support_label = node.name
-            node.name = ""
-        if not node.name:
-            node.name = f"Node{counter}"
-            counter += 1
+        name = (node.name or "").strip()
+        if not name:
+            sample = sorted(leaf.name for leaf in node.get_leaves())[:4]
+            unlabelled.append(f"<node over {sample}{'...' if len(sample) == 4 else ''}>")
+            continue
+        if name in seen:
+            duplicated.add(name)
+        seen.add(name)
+        node.name = name
+
+    if unlabelled:
+        raise ValueError(
+            f"{tree_path}: {len(unlabelled)} internal node(s) have no label, e.g. "
+            f"{unlabelled[:3]}. --tree must be the treefile written by the IQ-TREE "
+            f"--ancestral run (results/phylogenies/{{family}}.asr.treefile), whose "
+            f"internal nodes are all labelled NodeN and match the .state file. Do not "
+            f"pass {{family}}.treefile or {{family}}.rooted.treefile here."
+        )
+    if duplicated:
+        raise ValueError(
+            f"{tree_path}: duplicated internal node labels {sorted(duplicated)} — node "
+            f"identity is ambiguous, so .state lookups cannot be trusted."
+        )
     return tree
+
+
+def _leaf_parent_names(tree: ete3.Tree) -> dict[str, str]:
+    """Return {leaf_name: parent_node_name}, computed once by a single traversal.
+
+    Raises if a leaf name occurs more than once (ambiguous alignment/state lookups) or
+    if a leaf has no parent (a one-node "tree").
+    """
+    parents: dict[str, str] = {}
+    for leaf in tree.get_leaves():
+        if leaf.name in parents:
+            raise ValueError(
+                f"Duplicate leaf label '{leaf.name}' in the tree — alignment and "
+                f"ancestral-state lookups would be ambiguous."
+            )
+        if leaf.up is None:
+            raise ValueError(f"Leaf '{leaf.name}' has no parent node.")
+        parents[leaf.name] = leaf.up.name
+    return parents
+
+
+def _verify_tree_state_correspondence(
+    tree: ete3.Tree,
+    states: dict[str, dict[int, tuple[str, float]]],
+    leaf_parents: dict[str, str],
+) -> None:
+    """Raise unless every internal node used downstream resolves in the `.state` file.
+
+    This replaces the previous set-intersection heuristic ("do the two name sets overlap
+    at all?"), which passed on a single coincidental match: the local NodeN counter and
+    IQ-TREE's own NodeN numbering share a vocabulary, so an overlap of one proved nothing
+    while 6 of 7 nodes silently failed to resolve. The check is now node-by-node.
+    """
+    tree_internal = {node.name for node in tree.traverse() if not node.is_leaf()}
+    missing = sorted(tree_internal - set(states))
+    if missing:
+        raise ValueError(
+            f"{len(missing)} of {len(tree_internal)} internal tree nodes have no entry "
+            f"in the .state file, e.g. {missing[:5]}. .state nodes (sample): "
+            f"{sorted(states)[:5]}. The tree and the .state file must come from the same "
+            f"IQ-TREE --ancestral invocation."
+        )
+
+    unresolved = sorted(
+        {parent for parent in leaf_parents.values() if parent not in states}
+    )
+    if unresolved:
+        raise ValueError(
+            f"The direct ancestor of one or more leaves has no .state entry: "
+            f"{unresolved[:5]}. Every leaf's parent must be reconstructed, otherwise "
+            f"those lineages are silently dropped from convergence detection."
+        )
 
 
 # ---------------------------------------------------------------------------
 # Branch length and substitution rate helpers
 # ---------------------------------------------------------------------------
 
-def _get_leaf_parent_name(tree: ete3.Tree, leaf_name: str) -> str | None:
-    """Return the name of the direct parent of a leaf node."""
-    results = tree.search_nodes(name=leaf_name)
-    if not results:
-        return None
-    leaf_node = results[0]
-    parent = leaf_node.up
-    if parent is None:
-        return None
-    return parent.name
+def _map_leaves_to_species(
+    tree: ete3.Tree,
+    species_meta: dict,
+) -> tuple[dict[str, str], list[str]]:
+    """Return ({leaf_name: species_key}, [leaf names that could not be mapped]).
+
+    Unmapped leaves are returned rather than silently discarded: several carnivory
+    origins in config/species.yaml are represented by a SINGLE species (origin 2 is
+    Cephalotus_follicularis alone, origin 5 is Byblis_filifolia alone), so one leaf whose
+    label fails to parse can remove an entire independent origin from the analysis and
+    push a family below --min-lineages with no other visible symptom.
+    """
+    known_species = set(species_meta.keys())
+    mapped: dict[str, str] = {}
+    unmapped: list[str] = []
+    for leaf in tree.get_leaves():
+        species = _seq_id_to_species(leaf.name, known_species)
+        if species:
+            mapped[leaf.name] = species
+        else:
+            unmapped.append(leaf.name)
+    return mapped, unmapped
+
+
+def _origins_represented(
+    leaf_species_map: dict[str, str],
+    species_meta: dict,
+) -> dict[int, list[str]]:
+    """Return {carnivory_origin: [leaf names]} for mapped, carnivorous leaves only."""
+    by_origin: dict[int, list[str]] = defaultdict(list)
+    for leaf_name, species in leaf_species_map.items():
+        meta = species_meta.get(species, {})
+        if not meta.get("carnivorous"):
+            continue
+        origin = meta.get("carnivory_origin", 0)
+        if origin:
+            by_origin[origin].append(leaf_name)
+    return dict(by_origin)
 
 
 def _get_carnivorous_branch_lengths(
@@ -293,6 +390,8 @@ def _detect_convergent_sites(
     tree: ete3.Tree,
     states: dict[str, dict[int, tuple[str, float]]],
     species_meta: dict,
+    leaf_species_map: dict[str, str],
+    leaf_parents: dict[str, str],
     family: str,
     threshold: float,
     min_lineages: int,
@@ -302,18 +401,10 @@ def _detect_convergent_sites(
     For each alignment column, finds positions where ≥min_lineages independent
     carnivorous origins independently acquired the same (anc_aa → derived_aa)
     substitution. Performs a Poisson significance test.
+
+    `leaf_species_map` and `leaf_parents` are computed once by the caller (and validated
+    there) so that no lookup inside the per-site loop can fail silently.
     """
-    known_species = set(species_meta.keys())
-
-    # Map leaf name → species code
-    leaf_species_map: dict[str, str] = {}
-    for leaf in tree.get_leaves():
-        sp = _seq_id_to_species(leaf.name, known_species)
-        if sp:
-            leaf_species_map[leaf.name] = sp
-        else:
-            logger.debug("Could not map leaf '%s' to any species", leaf.name)
-
     carni_branch_len = _get_carnivorous_branch_lengths(tree, species_meta, leaf_species_map)
     background_rate = _background_substitution_rate(alignment)
     # Expected convergent substitutions per site under null:
@@ -341,16 +432,11 @@ def _detect_convergent_sites(
             if origin == 0:
                 continue
 
-            derived_aa = alignment.get(leaf.name, "")[site_0] if leaf.name in alignment else None
-            if derived_aa is None or derived_aa in "-X":
-                continue
-            if derived_aa not in _AA_SET:
+            derived_aa = alignment[leaf.name][site_0]
+            if derived_aa in "-X" or derived_aa not in _AA_SET:
                 continue
 
-            parent_name = _get_leaf_parent_name(tree, leaf.name)
-            if not parent_name:
-                continue
-
+            parent_name = leaf_parents[leaf.name]
             parent_state = states.get(parent_name, {}).get(site_1)
             if parent_state is None:
                 continue
@@ -472,7 +558,10 @@ def _write_tsv(results: list[dict], output_path: Path) -> None:
     "--tree", "-t",
     type=click.Path(exists=True),
     required=True,
-    help="Rooted IQ-TREE gene tree (Newick, format 1 with branch lengths and labels).",
+    help="Treefile written by the IQ-TREE --ancestral run "
+         "(results/phylogenies/{family}.asr.treefile). Its NodeN internal labels are the "
+         "ones the .state file's Node column refers to. Do NOT pass {family}.treefile or "
+         "{family}.rooted.treefile — their labels describe different clades.",
 )
 @click.option(
     "--state", "-s",
@@ -513,6 +602,14 @@ def _write_tsv(results: list[dict], output_path: Path) -> None:
     help="Minimum number of independent carnivorous origins required for a convergent site.",
 )
 @click.option(
+    "--allow-insufficient-origins",
+    is_flag=True,
+    help="Downgrade 'fewer independent carnivory origins present than --min-lineages' "
+         "from a hard failure to an ERROR log line. Needed only for single-origin "
+         "methods_benchmark families (nepenthesins, neprosins), which cannot produce a "
+         "cross-lineage convergence result by construction.",
+)
+@click.option(
     "--verbose",
     is_flag=True,
     help="Enable debug logging.",
@@ -526,6 +623,7 @@ def main(
     family: str,
     threshold: float,
     min_lineages: int,
+    allow_insufficient_origins: bool,
     verbose: bool,
 ) -> None:
     """Detect convergent amino acid substitutions in digestive enzyme families."""
@@ -558,31 +656,64 @@ def main(
     n_cols = len(next(iter(aln.values())))
     logger.info("  %d sequences × %d alignment columns", n_seqs, n_cols)
 
-    logger.info("Loading tree from %s", tree_path)
-    tree_obj = _load_tree(tree_path)
+    logger.info("Loading ancestral-reconstruction tree from %s", tree_path)
+    tree_obj = _load_asr_tree(tree_path)
     n_leaves = len(tree_obj.get_leaves())
     logger.info("  %d leaves", n_leaves)
 
+    leaf_parents = _leaf_parent_names(tree_obj)
+
+    missing_from_aln = sorted(set(leaf_parents) - set(aln))
+    if missing_from_aln:
+        raise ValueError(
+            f"{len(missing_from_aln)} tree leaf label(s) are absent from the alignment, "
+            f"e.g. {missing_from_aln[:5]}. Tree and alignment must describe the same "
+            f"sequence set; otherwise those lineages contribute nothing and the omission "
+            f"is invisible in the output."
+        )
+
     logger.info("Parsing .state file from %s", state_path)
     state_data = _parse_state_file(state_path)
-    n_nodes = len(state_data)
-    logger.info("  %d internal nodes reconstructed", n_nodes)
+    logger.info("  %d internal nodes reconstructed", len(state_data))
 
-    # Fail loudly if the tree's internal node names and the .state file's node names
-    # do not share a common vocabulary. Without this the pipeline silently emits zero
-    # convergent sites (every states.get(parent_name) lookup misses).
-    tree_internal_names = {n.name for n in tree_obj.traverse() if not n.is_leaf()}
-    overlap = tree_internal_names & set(state_data.keys())
-    if not overlap:
-        raise ValueError(
-            f"No internal node name in the tree matches any node in the .state file. "
-            f"Tree internal names (sample): {sorted(tree_internal_names)[:5]}; "
-            f".state node names (sample): {sorted(state_data.keys())[:5]}"
-        )
+    # Node-by-node correspondence, not a set-overlap heuristic: see
+    # _verify_tree_state_correspondence for why the old check could pass on one
+    # coincidental NodeN match while most nodes silently failed to resolve.
+    _verify_tree_state_correspondence(tree_obj, state_data, leaf_parents)
     logger.info(
-        "  %d/%d internal node names matched to .state entries",
-        len(overlap), len(tree_internal_names),
+        "  all %d internal tree nodes (and all %d leaf ancestors) resolved in .state",
+        sum(1 for n in tree_obj.traverse() if not n.is_leaf()), len(leaf_parents),
     )
+
+    leaf_species_map, unmapped_leaves = _map_leaves_to_species(tree_obj, species_meta)
+    if unmapped_leaves:
+        logger.warning(
+            "%d of %d tree leaves could not be mapped to any species in %s and are "
+            "EXCLUDED from convergence detection: %s",
+            len(unmapped_leaves), n_leaves, species_path, unmapped_leaves,
+        )
+    logger.info("  %d/%d leaves mapped to species", len(leaf_species_map), n_leaves)
+
+    by_origin = _origins_represented(leaf_species_map, species_meta)
+    for origin in sorted(by_origin):
+        logger.info(
+            "  carnivory origin %s: %d leaf/leaves (%s)",
+            origin, len(by_origin[origin]), ", ".join(sorted(by_origin[origin])[:4]),
+        )
+    if len(by_origin) < min_lineages:
+        message = (
+            f"Family '{family}': only {len(by_origin)} independent carnivory origin(s) "
+            f"{sorted(by_origin)} are represented among the mapped leaves, but "
+            f"--min-lineages is {min_lineages}. No convergent site can possibly be "
+            f"reported. Unmapped leaves: {unmapped_leaves or 'none'}."
+        )
+        if allow_insufficient_origins:
+            logger.error(message)
+        else:
+            raise ValueError(
+                message + " Re-run with --allow-insufficient-origins if this family is "
+                "genuinely single-origin (methods_benchmark)."
+            )
 
     logger.info("Running convergence detection (threshold=%.2f, min_lineages=%d)",
                 threshold, min_lineages)
@@ -591,6 +722,8 @@ def main(
         tree=tree_obj,
         states=state_data,
         species_meta=species_meta,
+        leaf_species_map=leaf_species_map,
+        leaf_parents=leaf_parents,
         family=family,
         threshold=threshold,
         min_lineages=min_lineages,
