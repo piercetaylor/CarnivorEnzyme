@@ -25,24 +25,33 @@ if [[ ! -f "$PFAM_HMM" ]]; then
 fi
 
 # --- Define target HMM accessions per enzyme family ---
+# UPDATED 2026-08-22: enzyme_families.yaml keys changed (audit/03_merops_restructure_and_neprosin_rescope.md,
+# audit/04_gh19_class_split.md). None of the 5 TODO species scanned by this script (Sarracenia_alata,
+# Darlingtonia, Heliamphora, Pinguicula_moranensis, Drosera_spatulata) is a Nepenthes species, so any A1B
+# aspartic-protease hit here can only ever belong to the homology-only bucket, never the Nepenthes-only
+# holotyped "nepenthesins" entry (which moved to methods_benchmark and isn't a hmmer-scan target for these
+# species anyway) — key renamed accordingly, PF number/length cutoff unchanged.
 declare -A FAMILY_HMMS=(
-    # GH19 chitinase — PF00182 (Glyco_hydro_19)
-    ["chitinases_gh19"]="PF00182"
+    # GH19 chitinase — PF00182 (Glyco_hydro_19). Convergence target is Class IV; a fresh hmmer hit still
+    # needs manual Class I vs IV domain-architecture triage (Chitin_bind_1 intact vs truncated) before
+    # being filed under chitinases_gh19_class_iv vs chitinases_gh19_class_i — this script only finds
+    # candidates, it doesn't classify them.
+    ["chitinases_gh19_class_iv"]="PF00182"
     # Purple acid phosphatase — PF00149 (Calcineurin-like) + PF16656 (PAP N-term)
     # Use PF00149 as the conserved catalytic domain marker
     ["purple_acid_phosphatase"]="PF00149"
     # RNase T2 — PF00445 (RNase T2 family)
     ["rnase_t2"]="PF00445"
     # A1B aspartic protease — PF00026 (Asp) + PF01951 (Asp_protease_2/PSI)
-    ["nepenthesins"]="PF00026"
+    ["aspartic_proteases_a1b_homology"]="PF00026"
 )
 
 # Length cutoffs per family (minimum aa for a plausible full-length prediction)
 declare -A MIN_LEN=(
-    ["chitinases_gh19"]="200"
+    ["chitinases_gh19_class_iv"]="200"
     ["purple_acid_phosphatase"]="350"
     ["rnase_t2"]="180"
-    ["nepenthesins"]="280"
+    ["aspartic_proteases_a1b_homology"]="280"
 )
 
 SPECIES=(

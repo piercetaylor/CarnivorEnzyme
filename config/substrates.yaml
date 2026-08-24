@@ -24,7 +24,11 @@ substrates:
 
   # --- Chitinases (GH19) ---
   GlcNAc4:
-    for_family: chitinases_gh19
+    for_family: chitinases_gh19_class_iv  # UPDATED 2026-08-22: chitinases_gh19 split into
+                                           # chitinases_gh19_class_iv / _class_i (see
+                                           # config/enzyme_families.yaml and
+                                           # audit/04_gh19_class_split.md). Docking substrate
+                                           # applies to the Class IV convergence-target family.
     description: "(GlcNAc)4 — chitin tetramer (N-acetylglucosamine tetrasaccharide)"
     smiles: null
     pubchem_cid: 23697                # (GlcNAc)4; verify CID before use
