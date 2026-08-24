@@ -35,6 +35,7 @@ Usage:
   snakemake --use-conda -n
 """
 
+import re
 import yaml
 from pathlib import Path
 
@@ -47,6 +48,13 @@ def _load_tier1_families(path: str) -> list[str]:
     return list(data.get("tier1", {}).keys())
 
 FAMILIES = _load_tier1_families("config/enzyme_families.yaml")
+
+# Pin {family} to the known family keys. Without this, a path such as
+# results/phylogenies/rnase_t2.asr.treefile is also matchable by rule infer_tree with
+# family="rnase_t2.asr" (and .rooted.treefile by family="rnase_t2.rooted"), which makes
+# the DAG ambiguous as soon as more than one IQ-TREE pass writes into the same directory.
+wildcard_constraints:
+    family="|".join(re.escape(f) for f in FAMILIES),
 
 
 # ── Include all rule modules ───────────────────────────────────────────────────
@@ -91,6 +99,10 @@ rule phase2:
         ),
         rooted=expand(
             "results/phylogenies/{family}.rooted.treefile",
+            family=FAMILIES,
+        ),
+        ancestral_states=expand(
+            "results/phylogenies/{family}.asr.state",
             family=FAMILIES,
         ),
 

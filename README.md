@@ -73,16 +73,20 @@ CarnivorEnzyme is the first to apply the stability × evolution classification t
 ## Target Enzyme Families (Tier 1)
 
 > **Restructured 2026-08-22** (see `audit/03_merops_restructure_and_neprosin_rescope.md` and
-> `audit/04_gh19_class_split.md`). Four tier1 families are valid cross-lineage convergence
-> targets; GH19 Class I is retained tier1 for structural comparison only (different domain
-> architecture than the Class IV convergence target); nepenthesins and neprosins are
-> *Nepenthes*-only and live under `methods_benchmark:`, not `tier1:`, since a single-origin
-> lineage cannot produce a `min_lineages: 2` cross-lineage convergence result.
+> `audit/04_gh19_class_split.md`), with GH19 Class I moved out of tier1 on 2026-08-24 (see
+> `audit/10_config_gaps_and_consistency_test.md`). Four tier1 families are valid cross-lineage
+> convergence targets; GH19 Class I, nepenthesins, and neprosins all live under
+> `methods_benchmark:`, not `tier1:`, since each is confined to a single carnivory origin
+> (GH19 Class I's three *Drosera* species all share the one Caryophyllales origin; nepenthesins
+> and neprosins are *Nepenthes*-only) and a single-origin family cannot produce a
+> `min_lineages: 2` cross-lineage convergence result. GH19 Class I is additionally kept out of
+> the Class IV alignment/tree because it has a different domain architecture (intact CBM18
+> chitin-binding domain vs. Class IV's truncated/deleted CBM18).
 
 | Family | Class | Digestive role | Reference structure | Convergence target? |
 | ------ | ----- | -------------- | ------------------- | -------------------- |
 | GH19 chitinases, Class IV (`chitinases_gh19_class_iv`) | Glycoside hydrolase 19 | Chitin hydrolysis from arthropod cuticle | 4J0L (*Secale cereale*, 1.75 Å) | Yes — primary Fukushima 2017 Fig. 3a target |
-| GH19 chitinases, Class I (`chitinases_gh19_class_i`) | Glycoside hydrolase 19 | Chitin hydrolysis (intact CBM18 chitin-binding domain) | PDB 9JTR (*D. adelae*, 1.73 Å) | No — structural comparison only |
+| GH19 chitinases, Class I (`methods_benchmark.chitinases_gh19_class_i`) | Glycoside hydrolase 19 | Chitin hydrolysis (intact CBM18 chitin-binding domain) | PDB 9JTR (*D. adelae*, 1.73 Å) | No — single-origin structural comparison only |
 | Aspartic proteases, A1B-like by homology (`aspartic_proteases_a1b_homology`: droserasin, dionain-AP, *Cephalotus* AP, *Sarracenia* AP; no MEROPS holotype) | A1B aspartic protease | Bulk proteolysis; optimum pH 2–3 | 1B5F (*Cynara cardunculus*, 2.0 Å) | Yes — spans Drosera+Dionaea, Cephalotus, Sarracenia origins |
 | Purple acid phosphatases (`purple_acid_phosphatase`) | Fe-Zn/Fe-Mn binuclear metalloenzyme | Organic phosphate liberation | 1RDP (*Glycine max*, 2.65 Å) | Yes |
 | RNase T2, S-like (`rnase_t2`) | Ribonuclease T2 | RNA hydrolysis; phosphate scavenging | 1IYC (*Pyrus communis*, 1.50 Å) | Yes |

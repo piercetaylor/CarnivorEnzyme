@@ -7,6 +7,41 @@ Tasks are organized by tier (urgency × impact), not phase. Each task has an exp
 
 ---
 
+## Tier 0-pre — Verify the new ancestral-reconstruction pipeline on real HPC (2026-08-24, blocking)
+
+**Do this before running Phase 2/3 for real.** `workflow/scripts/detect_convergence.py` had two
+compounding architectural bugs (tree/`.state` node-name collision + rooting-order mismatch between
+`root_tree.py`'s rerooted tree and IQ-TREE's ancestral reconstruction) that made it silently
+produce fabricated, statistically-significant "convergent site" output from data with zero real
+substitutions — confirmed by actually running a real IQ-TREE 3.1.3 binary against synthetic data.
+Fixed with a real architectural change (see `audit/11_ancestral_reconstruction_architecture_fix.md`):
+`phylogeny.smk` now runs IQ-TREE in two passes (topology → root → a new `ancestral_reconstruction`
+rule that runs ASR on the already-rooted, fixed topology via `-te`), and `detect_convergence.py` no
+longer invents node names at all — it validates node-by-node against the `.asr.state` file and
+raises loudly on any mismatch.
+
+This was verified with a real IQ-TREE binary on synthetic data (positive control: a planted
+substitution was recovered at the exact right position and origin set; 4 negative controls all
+raised correctly) — but NOT against this project's real alignments/trees, and NOT via an actual
+Snakemake run (the shell layer doesn't work on the Windows dev machine this was built on; DAG was
+validated by `snakemake -n` dry-run only, with every shell command executed manually instead).
+
+- [ ] Run the full `phylogeny.smk` → `convergence.smk` chain for at least one real family (start
+      with `chitinases_gh19_class_iv`, the best-populated family) on Hellbender and confirm
+      `results/convergence/{family}.convergent_sites.tsv` has real, non-fabricated rows
+- [ ] Confirm `-te`/`--ancestral`/`-alrt` flag compatibility and the IQ-TREE binary name (`iqtree`
+      vs `iqtree2` vs `iqtree3`) actually match what's installed on Hellbender — this was verified
+      against a locally-downloaded IQ-TREE 3.1.3 Windows binary, not the HPC installation
+- [ ] Fix the separate, pre-existing `ChildIOException` Snakemake DAG bug found while testing this
+      (`retrieve.smk`'s `fetch_all_sequences` rule outputs `results/sequences/`, which is the
+      parent directory of `combine_family_sequences`'s output — Snakemake rejects a directory
+      output that's an ancestor of another rule's output). Blocks ANY full-pipeline dry run, not
+      just this fix's rules. Not fixed in this remediation pass — out of scope, flagged only.
+- [ ] Follow-up: `workflow/scripts/extract_ancestor.py` has similar node-naming fallback patterns
+      (levelorder-index naming, substring `.state` matching) to what was just fixed in
+      `detect_convergence.py`. Currently unreachable in the normal path post-fix, but worth the
+      same scrutiny before Phase 4A (ancestral structure reconstruction) is trusted.
+
 ## Tier 0 — Pivot Corrections (dated 2026-05-12 — STALE, unexecuted as of 2026-08-24)
 
 **Status check (2026-08-24 remediation pass, see `audit/06_doc_sync_and_bloat_trim.md`):** none of
