@@ -35,37 +35,63 @@ _AA_SET = set(AA_COLS)
 # ---------------------------------------------------------------------------
 
 def _load_species_meta(species_yaml: Path) -> dict:
-    """Return {species_code: {carnivorous, carnivory_origin, name}}."""
+    """Return {lookup_key: {carnivorous, carnivory_origin, name}}.
+
+    Registers each species under BOTH its full species name (the YAML key, e.g.
+    'Nepenthes_gracilis') and its short code (e.g. 'Ngra'). Tree leaf labels and
+    FASTA headers in this pipeline use the '{Species_name}|{accession}' form set by
+    fetch_sequences.py, so the species-name key is the one that actually matches;
+    the code key is kept for any consumer that works in short codes.
+    """
     with open(species_yaml, encoding="utf-8") as fh:
         data = yaml.safe_load(fh)
-    meta = {}
+    meta: dict = {}
 
     # Load carnivorous species
     for species_name, entry in data.get("carnivorous_species", {}).items():
-        code = entry.get("code") or species_name.replace(" ", "_")
-        meta[code] = {
+        origin = entry.get("carnivory_origin")
+        if not origin:
+            raise ValueError(
+                f"{species_yaml}: carnivorous species '{species_name}' has no carnivory_origin"
+            )
+        rec = {
             "carnivorous": True,
-            "carnivory_origin": entry.get("carnivory_origin", 0),
+            "carnivory_origin": origin,
             "name": species_name,
         }
+        meta[species_name] = rec
+        code = entry.get("code")
+        if code:
+            meta[code] = rec
 
     # Load outgroup (non-carnivorous) species
     for species_name, entry in data.get("outgroup_species", {}).items():
-        code = entry.get("code") or species_name.replace(" ", "_")
-        meta[code] = {
+        rec = {
             "carnivorous": False,
             "carnivory_origin": 0,
             "name": species_name,
         }
+        meta[species_name] = rec
+        code = entry.get("code")
+        if code:
+            meta[code] = rec
+
+    if not meta:
+        raise ValueError(
+            f"{species_yaml}: no species loaded — expected 'carnivorous_species' "
+            f"and/or 'outgroup_species' top-level keys, found: {sorted(data)}"
+        )
 
     return meta
 
 
 def _seq_id_to_species(seq_id: str, known_species: set) -> str | None:
-    """Map a sequence ID to a species code.
+    """Map a sequence ID to a species-metadata lookup key.
 
-    Handles 'Species_name|accession' format (pipe delimiter) and plain
-    accession-only IDs. Returns None if species cannot be identified.
+    Handles the '{Species_name}|{accession}' format written by fetch_sequences.py
+    (pipe delimiter) and plain accession-only IDs. `known_species` must contain the
+    full species-name keys produced by _load_species_meta (it also contains the short
+    codes). Returns None if species cannot be identified.
     """
     if "|" in seq_id:
         candidate = seq_id.split("|")[0]
@@ -98,10 +124,23 @@ def _parse_alignment(fasta_path: Path) -> dict[str, str]:
 def _parse_state_file(state_path: Path) -> dict[str, dict[int, tuple[str, float]]]:
     """Parse IQ-TREE .state file.
 
+    The real IQ-TREE format (verified against the IQ-TREE Command Reference,
+    "Ancestral sequence reconstruction") is a tab-separated table whose header is:
+
+        Node <TAB> Site <TAB> State <TAB> p_A <TAB> p_R <TAB> ... <TAB> p_V
+
+    'State' (index 2) holds the MAP state letter; the p_* columns hold the
+    per-state posterior probabilities. Columns are resolved BY HEADER NAME, not by
+    fixed offset — a missing column is a loud failure, not a silent default.
+
     Returns {node_label: {site_1based: (map_aa, posterior_prob)}}.
     Skips leaf rows (only internal nodes have ancestral reconstruction).
     """
     states: dict[str, dict[int, tuple[str, float]]] = {}
+    idx_state: int | None = None
+    idx_p: dict[str, int] = {}
+    n_ambiguous = 0
+
     with open(state_path) as fh:
         header = None
         for line in fh:
@@ -109,35 +148,75 @@ def _parse_state_file(state_path: Path) -> dict[str, dict[int, tuple[str, float]
             if line.startswith("#") or not line.strip():
                 continue
             if header is None:
-                header = line.split("\t")
+                header = [h.strip() for h in line.split("\t")]
+                # Let ValueError propagate: a .state file missing these columns is
+                # malformed and must fail immediately rather than yield zero rows.
+                idx_state = header.index("State")
+                idx_p = {aa: header.index("p_" + aa) for aa in AA_COLS}
                 continue
             parts = line.split("\t")
-            if len(parts) < 22:
-                continue
             node = parts[0]
             try:
                 site = int(parts[1])
-            except ValueError:
-                continue
-            map_aa = parts[-1].strip()
-            # Posterior probability of MAP state
-            try:
-                aa_idx = AA_COLS.index(map_aa) + 2  # columns 2..21 are p_A..p_V
-                posterior = float(parts[aa_idx])
             except (ValueError, IndexError):
-                posterior = 0.0
+                continue
+            map_aa = parts[idx_state].strip()
+            if map_aa not in _AA_SET:
+                # Ambiguous/gap MAP state (e.g. '-' or '?') — not an error.
+                n_ambiguous += 1
+                continue
+            posterior = float(parts[idx_p[map_aa]])
             if node not in states:
                 states[node] = {}
             states[node][site] = (map_aa, posterior)
+
+    if n_ambiguous:
+        logger.debug("  %d rows skipped with ambiguous/gap MAP state", n_ambiguous)
+    if not states:
+        raise ValueError(
+            f"{state_path}: parsed 0 internal nodes — check IQ-TREE --ancestral output format"
+        )
     return states
 
 
+def _is_support_label(name: str) -> bool:
+    """True if an internal-node label is a bootstrap/support value, not a node name.
+
+    IQ-TREE run with `-bb 1000 -alrt 1000` writes support values into internal node
+    labels, e.g. '85.7/97' or '100/100/95' or plain '97'. These are NOT node names and
+    will never match the NodeN labels used in the .state file, so they must not be
+    treated as pre-existing names.
+    """
+    if not name:
+        return False
+    parts = name.split("/")
+    if not all(parts):
+        return False
+    for part in parts:
+        try:
+            float(part)
+        except ValueError:
+            return False
+    return True
+
+
 def _load_tree(tree_path: Path) -> ete3.Tree:
-    """Load and return an ete3 tree, naming unnamed internal nodes."""
+    """Load and return an ete3 tree, naming unnamed internal nodes.
+
+    Internal-node labels that are really support values (see _is_support_label) are
+    moved to `node.support_label` and replaced with a NodeN name, so that they do not
+    masquerade as .state file node names. Genuine names (e.g. 'Node12' written by
+    IQ-TREE's ancestral reconstruction) are left untouched.
+    """
     tree = ete3.Tree(str(tree_path), format=1)
     counter = 1
     for node in tree.traverse("postorder"):
-        if not node.is_leaf() and not node.name:
+        if node.is_leaf():
+            continue
+        if _is_support_label(node.name):
+            node.support_label = node.name
+            node.name = ""
+        if not node.name:
             node.name = f"Node{counter}"
             counter += 1
     return tree
@@ -170,7 +249,12 @@ def _get_carnivorous_branch_lengths(
         species = leaf_species_map.get(leaf.name)
         if species and species_meta.get(species, {}).get("carnivorous"):
             total += leaf.dist
-    return total if total > 0 else 1.0
+    if total <= 0:
+        raise ValueError(
+            "No carnivorous leaf branch lengths found — check species mapping "
+            "(leaf_species_map) before computing the null model"
+        )
+    return total
 
 
 def _background_substitution_rate(alignment: dict[str, str]) -> float:
@@ -181,8 +265,10 @@ def _background_substitution_rate(alignment: dict[str, str]) -> float:
     """
     seqs = [s for s in alignment.values()]
     if len(seqs) < 2:
-        return 0.01
-    n_sites = len(seqs[0])
+        raise ValueError(
+            "Could not compute background substitution rate — alignment has "
+            f"{len(seqs)} sequence(s), need at least 2"
+        )
     pairwise_divergences = []
     for s1, s2 in combinations(seqs, 2):
         comparable = [(a, b) for a, b in zip(s1, s2) if a not in "-X" and b not in "-X"]
@@ -191,7 +277,10 @@ def _background_substitution_rate(alignment: dict[str, str]) -> float:
         diff = sum(1 for a, b in comparable if a != b)
         pairwise_divergences.append(diff / len(comparable))
     if not pairwise_divergences:
-        return 0.01
+        raise ValueError(
+            "Could not compute background substitution rate — no comparable "
+            "sequence pairs in alignment"
+        )
     return float(np.mean(pairwise_divergences))
 
 
@@ -454,8 +543,14 @@ def main(
 
     logger.info("Loading species metadata from %s", species_path)
     species_meta = _load_species_meta(species_path)
-    n_carni = sum(1 for v in species_meta.values() if v["carnivorous"])
-    logger.info("  %d species total, %d carnivorous", len(species_meta), n_carni)
+    # Each species is registered under two keys (name + code), so count distinct
+    # species by their canonical 'name' field rather than by dict size.
+    unique_species = {v["name"]: v for v in species_meta.values()}
+    n_carni = sum(1 for v in unique_species.values() if v["carnivorous"])
+    logger.info(
+        "  %d species total, %d carnivorous (%d lookup keys)",
+        len(unique_species), n_carni, len(species_meta),
+    )
 
     logger.info("Parsing alignment from %s", alignment_path)
     aln = _parse_alignment(alignment_path)
@@ -472,6 +567,22 @@ def main(
     state_data = _parse_state_file(state_path)
     n_nodes = len(state_data)
     logger.info("  %d internal nodes reconstructed", n_nodes)
+
+    # Fail loudly if the tree's internal node names and the .state file's node names
+    # do not share a common vocabulary. Without this the pipeline silently emits zero
+    # convergent sites (every states.get(parent_name) lookup misses).
+    tree_internal_names = {n.name for n in tree_obj.traverse() if not n.is_leaf()}
+    overlap = tree_internal_names & set(state_data.keys())
+    if not overlap:
+        raise ValueError(
+            f"No internal node name in the tree matches any node in the .state file. "
+            f"Tree internal names (sample): {sorted(tree_internal_names)[:5]}; "
+            f".state node names (sample): {sorted(state_data.keys())[:5]}"
+        )
+    logger.info(
+        "  %d/%d internal node names matched to .state entries",
+        len(overlap), len(tree_internal_names),
+    )
 
     logger.info("Running convergence detection (threshold=%.2f, min_lineages=%d)",
                 threshold, min_lineages)

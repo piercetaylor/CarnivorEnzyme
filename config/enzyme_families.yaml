@@ -180,50 +180,26 @@ tier1:
 
 
   # ============================================================
-  # 1B. GH19 CHITINASES — CLASS I (structural comparison only, NOT a convergence target)
+  # 1B. GH19 CHITINASES — CLASS I — MOVED to methods_benchmark 2026-08-24
   # ============================================================
-  # RESTRUCTURED 2026-08-22 (audit/04_gh19_class_split.md): split out of the former single
-  # "chitinases_gh19" entry (see section 1 above for full rationale). These sequences have
-  # an intact Chitin_bind_1/CBM18 chitin-binding domain (verified: Yoneda et al. 2025 FEBS
-  # Open Bio 15:1930-1944 for D. adelae BAW35424.1; Planta 2025 PMC11725546 for D. binata
-  # QHN63861.1) — different domain architecture from the Class IV target class in
-  # chitinases_gh19_class_iv above. Do NOT combine with chitinases_gh19_class_iv in a
-  # single alignment/tree for cross-lineage convergence detection; use only for structural
-  # comparison (e.g. against the D. adelae PDB 9JTR crystal structure).
-
-  chitinases_gh19_class_i:
-    cazy: GH19
-    merops: null
-    class: "I"
-    note: "Structural comparison only — not used for cross-lineage convergence detection (different domain architecture: intact Chitin_bind_1/CBM18 domain, vs. the truncated/deleted CBM18 of the chitinases_gh19_class_iv target class). See audit/04_gh19_class_split.md."
-    convergent_source: "Not applicable — Class I chitinases; not a Fukushima et al. 2017 Fig. 3a convergence target (that target class is Class IV, see chitinases_gh19_class_iv)"
-    expected_length_aa: [300, 330]
-    accessions:
-
-      # --- Drosera (Caryophyllales, sticky trap) ---
-      Drosera_capensis:
-        - BDB33378.1    # VERIFIED: Class I chitinase, 325 aa. MOVED here 2026-08-22 from
-                        # chitinases_gh19_class_iv, where it was previously mislabeled as a
-                        # Class IV "proxy" — it is genuinely Class I (different domain
-                        # architecture) and useful here for structural comparison, but is NOT
-                        # the D. capensis Class IV ortholog. See the TODO under
-                        # chitinases_gh19_class_iv's Drosera_capensis entry for the actual
-                        # (unresolved) Class IV gap.
-
-      Drosera_adelae:
-        - BAW35424.1    # VERIFIED: Basic chitinase (GH19 class I), 321 aa; Yoneda et al. 2025,
-                        # FEBS Open Bio 15:1930-1944. Crystal structure deposited as PDB 9JTR (1.73 Å)
-                        # Directly confirmed class I: "Sequence analysis of D. adelae chitinase has
-                        # revealed that it belongs to class I of the GH19 family... A distinguishing
-                        # feature of class I chitinases is the presence of a chitin-binding domain,
-                        # also known as the hevein domain, at their N-terminal region" (Yoneda et al. 2025).
-
-      Drosera_binata:
-        - QHN63861.1    # VERIFIED: Endochitinase class I (DbChitI-3), 321 aa; MN481117.1
-                        # Libantova et al. 2019 submission; pH optimum 2.5 (Planta 2025, PMC11725546)
-                        # GH19 confirmed (Glyco_hydro_19 + Chitin_bind_1 domains). Class I annotation
-                        # independently confirmed in Planta 2025 (PMC11725546), which describes it as
-                        # an "extracellular class I chitinase."
+  # RESTRUCTURED 2026-08-24 (audit/10_config_gaps_and_consistency_test.md): chitinases_gh19_class_i
+  # contains exactly 3 species (Drosera_capensis/BDB33378.1, Drosera_adelae/BAW35424.1,
+  # Drosera_binata/QHN63861.1), all sharing carnivory_origin: 1 (Caryophyllales — see
+  # config/species.yaml). With convergence.min_lineages: 2 in config/config.yaml, a family
+  # entirely within one carnivory origin can never satisfy the cross-lineage convergence
+  # threshold. Snakefile:44-49 derives FAMILIES = list(data["tier1"].keys()), which feeds
+  # every convergence-related Snakemake target (phase2, phase3a, phase4a, phase5d, rule
+  # all) — leaving this family in tier1: guaranteed a header-only empty convergence output
+  # for it on every run, i.e. the exact "zero rows, exit 0" false-positive signature this
+  # remediation effort exists to eliminate. This was already flagged in the entry's own
+  # `note` field ("Structural comparison only — not used for cross-lineage convergence
+  # detection") but the entry itself remained under tier1: until now. Moved verbatim (all
+  # comments, accessions, and notes preserved) to methods_benchmark below — same treatment
+  # as nepenthesins/neprosins, moved out of tier1 on 2026-08-22 for the identical
+  # single-carnivory-origin reason (see the "4. NEPENTHESINS — MOVED" comment above and
+  # audit/03_merops_restructure_and_neprosin_rescope.md). See
+  # methods_benchmark.chitinases_gh19_class_i below for the full entry, and
+  # audit/10_config_gaps_and_consistency_test.md for verification.
 
 
   # ============================================================
@@ -289,7 +265,16 @@ tier1:
         - TODO          # NOT FOUND in NCBI protein search (genome JAUMHN000000000 not annotated)
 
       # Nepenthes_mirabilis PAP (ENA PRJEB86749 only; Goh 2025 S3 parsed April 2026):
-      Nepenthes_mirabilis_PAP:
+      # KEY FIXED 2026-08-24 (audit/10_config_gaps_and_consistency_test.md): this was
+      # previously keyed "Nepenthes_mirabilis_PAP" — a malformed species name with a
+      # family-disambiguation suffix awkwardly appended, which does not match any
+      # config/species.yaml entry. Renamed to the correct species key "Nepenthes_mirabilis".
+      # No plain "Nepenthes_mirabilis" key existed elsewhere in this family's accessions
+      # (checked before renaming — chitinases_gh19_class_iv and methods_benchmark.nepenthesins/
+      # neprosins each have their own separate "Nepenthes_mirabilis" entries under their own
+      # family accessions, which is fine; this rename only affects purple_acid_phosphatase),
+      # so this is a plain rename, not a merge.
+      Nepenthes_mirabilis:
         - TODO          # PARTIAL_RESOLVE: 27 PAP gene models found in Goh 2025 S3 (doi:10.1371/journal.pone.0322885.s003)
                         # Best active candidates (exclude INACTIVE-annotated entries):
                         #   Nep_mir_jg12124.t1 (426 aa): PF16656 N-term PAP + PF00149 + cd00839 + PF14008 + PANTHER PTHR22953:SF130
@@ -632,6 +617,62 @@ tier2:
 #   substitution comparison across N. gracilis/alata/ampullaria/ventrata/mirabilis).
 
 methods_benchmark:
+
+  # ============================================================
+  # GH19 CHITINASES — CLASS I (structural comparison only, NOT a convergence target)
+  # ============================================================
+  # MOVED HERE from tier1 2026-08-24 (audit/10_config_gaps_and_consistency_test.md): all 3
+  # species in this family (Drosera_capensis, Drosera_adelae, Drosera_binata) share
+  # carnivory_origin: 1 (Caryophyllales — see config/species.yaml), so this family can
+  # never satisfy convergence.min_lineages: 2 and was producing a guaranteed header-only
+  # empty convergence-detection output every run under tier1:. Same rationale/treatment as
+  # nepenthesins/neprosins (moved out of tier1 2026-08-22, see below and
+  # audit/03_merops_restructure_and_neprosin_rescope.md). See the "1B. GH19 CHITINASES —
+  # CLASS I — MOVED" placeholder comment left in tier1's former section 1B for the
+  # cross-reference. Moved verbatim — no comments, accessions, or notes were dropped.
+  #
+  # RESTRUCTURED 2026-08-22 (audit/04_gh19_class_split.md): split out of the former single
+  # "chitinases_gh19" entry (see tier1 section 1 for full rationale). These sequences have
+  # an intact Chitin_bind_1/CBM18 chitin-binding domain (verified: Yoneda et al. 2025 FEBS
+  # Open Bio 15:1930-1944 for D. adelae BAW35424.1; Planta 2025 PMC11725546 for D. binata
+  # QHN63861.1) — different domain architecture from the Class IV target class in
+  # tier1.chitinases_gh19_class_iv. Do NOT combine with chitinases_gh19_class_iv in a
+  # single alignment/tree for cross-lineage convergence detection; use only for structural
+  # comparison (e.g. against the D. adelae PDB 9JTR crystal structure).
+
+  chitinases_gh19_class_i:
+    cazy: GH19
+    merops: null
+    class: "I"
+    note: "Structural comparison only — not used for cross-lineage convergence detection (different domain architecture: intact Chitin_bind_1/CBM18 domain, vs. the truncated/deleted CBM18 of the chitinases_gh19_class_iv target class). See audit/04_gh19_class_split.md. MOVED from tier1 to methods_benchmark 2026-08-24 — see audit/10_config_gaps_and_consistency_test.md — because all 3 species share a single carnivory_origin and the family can never meet min_lineages: 2."
+    convergent_source: "Not applicable — Class I chitinases; not a Fukushima et al. 2017 Fig. 3a convergence target (that target class is Class IV, see tier1.chitinases_gh19_class_iv)"
+    expected_length_aa: [300, 330]
+    accessions:
+
+      # --- Drosera (Caryophyllales, sticky trap) ---
+      Drosera_capensis:
+        - BDB33378.1    # VERIFIED: Class I chitinase, 325 aa. MOVED here 2026-08-22 from
+                        # chitinases_gh19_class_iv, where it was previously mislabeled as a
+                        # Class IV "proxy" — it is genuinely Class I (different domain
+                        # architecture) and useful here for structural comparison, but is NOT
+                        # the D. capensis Class IV ortholog. See the TODO under
+                        # chitinases_gh19_class_iv's Drosera_capensis entry for the actual
+                        # (unresolved) Class IV gap.
+
+      Drosera_adelae:
+        - BAW35424.1    # VERIFIED: Basic chitinase (GH19 class I), 321 aa; Yoneda et al. 2025,
+                        # FEBS Open Bio 15:1930-1944. Crystal structure deposited as PDB 9JTR (1.73 Å)
+                        # Directly confirmed class I: "Sequence analysis of D. adelae chitinase has
+                        # revealed that it belongs to class I of the GH19 family... A distinguishing
+                        # feature of class I chitinases is the presence of a chitin-binding domain,
+                        # also known as the hevein domain, at their N-terminal region" (Yoneda et al. 2025).
+
+      Drosera_binata:
+        - QHN63861.1    # VERIFIED: Endochitinase class I (DbChitI-3), 321 aa; MN481117.1
+                        # Libantova et al. 2019 submission; pH optimum 2.5 (Planta 2025, PMC11725546)
+                        # GH19 confirmed (Glyco_hydro_19 + Chitin_bind_1 domains). Class I annotation
+                        # independently confirmed in Planta 2025 (PMC11725546), which describes it as
+                        # an "extracellular class I chitinase."
 
   # ============================================================
   # NEPENTHESINS (Aspartic proteases, A1B) — Nepenthes-only, MEROPS holotype family
