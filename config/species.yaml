@@ -8,17 +8,53 @@
 #   pitcher_pH:     measured or estimated fluid pH (null = not applicable or unknown)
 #   clade/order:    angiosperm order
 #   trap:           trap morphology
-#   carnivory_origin: integer grouping independent origins (1=Caryophyllales, 4=Oxalidales, etc.)
+#   carnivory_origin: integer grouping independent origins (1=Caryophyllales, 2=Oxalidales, etc.; see CARNIVORY ORIGINS block below)
 #   expression_sra: SRA BioProject accession for RNA-seq (null if not used)
 #   genome_source:  citation for genome assembly
 #   tier:           1=core pipeline, 2=extended atlas
 #
 # CARNIVORY ORIGINS (independent evolutionary events):
-#   1 — Caryophyllales: Nepenthes, Drosera, Dionaea, Aldrovanda, Drosophyllum (same order)
-#   4 — Oxalidales: Cephalotus
-#   5 — Ericales: Sarracenia, Darlingtonia, Heliamphora (Sarraceniaceae family)
-#   6 — Lamiales: Utricularia, Genlisea, Pinguicula (Lentibulariaceae)
-#   7 — Lamiales: Byblis (Byblidaceae; distinct from Lentibulariaceae)
+#   Corrected 2026-08-22 (audit/02_carnivory_origin_reassignment.md). Previously this
+#   header said "1 — Caryophyllales" (a single origin) while the per-species
+#   carnivory_origin fields below actually encoded THREE separate Caryophyllales
+#   origins (Nepenthes=1, Drosera=2, Dionaea/Aldrovanda=3) — an internal
+#   contradiction. Verified against Fleck & Jobson (2023, Plants 12(19):3356,
+#   https://doi.org/10.3390/plants12193356): "Within the Caryophyllales, carnivory
+#   may have evolved once, only to be subsequently lost once or multiple times
+#   during the divergence that led to the flypaper-trapping monotypic family
+#   Drosophyllaceae, as well as Ancistrocladaceae + Dioncophyllaceae," with
+#   Nepenthaceae and Droseraceae described as sister clades from that single
+#   common carnivorous ancestor. Corroborated by Fleischmann et al. (2018,
+#   in Ellison & Adamec eds., Carnivorous Plants: Physiology, Ecology, and
+#   Evolution, Oxford University Press, ch. 3, doi:10.1093/oso/9780198779841.003.0003),
+#   §3.2, quoted verbatim from the primary text: "In Nepenthales, carnivory appears
+#   to have evolved only once ... The carnivorous lineage ('carnivorous Nepenthales:'
+#   Droseraceae, Nepenthaceae, Drosophyllaceae, Dioncophyllaceae, Ancistrocladaceae)
+#   is sister to an entirely noncarnivorous clade." The same chapter states
+#   "Nepenthales were treated by APG IV (2016) as the non-core group of
+#   Caryophyllales," so its "Nepenthales" is exactly the clade Fleck & Jobson
+#   discuss as "within the Caryophyllales" — the two sources are commensurable and
+#   agree on a single origin. Fleischmann et al. further state: "Molecular data
+#   indicate unequivocally that Dionaea and Aldrovanda are sister to each other, and
+#   jointly sister to Drosera; these three genera of Droseraceae ... in turn, are
+#   sister to Nepenthes (Nepenthaceae)" — directly supporting one shared origin for
+#   all four genera represented below. All Caryophyllales carnivorous species below
+#   therefore share ONE carnivory_origin value.
+#
+#   CITATION CORRECTION (opus checker, 2026-08-22): an earlier revision of this
+#   header attributed to Fleischmann et al. (2018) the phrase "once (or twice) in
+#   the non-core Caryophyllales (i.e., Nepenthales)". That phrase does NOT appear in
+#   the chapter. The chapter's only "or twice" hedge concerns ERICALES ("whether
+#   carnivory arose once or twice in Ericales ... Sarraceniaceae and Roridula"), not
+#   Caryophyllales. Its Caryophyllales statement is unhedged ("only once"). The
+#   misquote has been replaced above with directly-verified primary text.
+#
+#   1 — Caryophyllales: Nepenthes, Drosera, Dionaea, Aldrovanda (single shared
+#       origin; Drosophyllum not yet present as a species entry in this file)
+#   2 — Oxalidales: Cephalotus
+#   3 — Ericales: Sarracenia, Darlingtonia, Heliamphora (Sarraceniaceae family)
+#   4 — Lamiales: Utricularia, Genlisea, Pinguicula (Lentibulariaceae)
+#   5 — Lamiales: Byblis (Byblidaceae; distinct from Lentibulariaceae)
 #   NOTE: Roridula (Ericales, Roridulaceae) excluded — lacks endogenous digestive enzymes
 
 # ============================================================
@@ -68,6 +104,69 @@ carnivorous_species:
     genome_source: "Goh et al. 2025, PLOS One (common swamp pitcher plant genome)"
     tier: 1
 
+  Nepenthes_ampullaria:
+    taxid: 150949
+    code: Namp
+    genome: none                   # No published genome as of 2026-08-24; RNA-seq only (PMC4707257)
+    pitcher_pH: 5.0                # High-pH pitcher species (semi-detritivorous); see
+                                    # enzyme_families.yaml methods_benchmark.neprosins comment
+                                    # "high-pH pitcher, pH~5 — useful for pH comparison"
+    clade: Caryophyllales
+    order: Caryophyllales
+    trap: pitfall_pitcher
+    carnivory_origin: 1
+    expression_sra: null
+    genome_source: null
+    tier: 1
+    notes: "Added 2026-08-24 (audit/10_config_gaps_and_consistency_test.md): has real accessions (ARA95696.1, ARA95695.1) in methods_benchmark.neprosins, useful for within-Nepenthes pitcher-pH case study. RNA-seq data exists (Front. Plant Sci., PMC4707257) but no genome assembly published."
+
+  Nepenthes_bicalcarata:
+    taxid: 330715
+    code: Nbic
+    genome: none                   # No published genome or accession found (2026-08-24)
+    pitcher_pH: null
+    clade: Caryophyllales
+    order: Caryophyllales
+    trap: pitfall_pitcher
+    carnivory_origin: 1
+    expression_sra: null
+    genome_source: null
+    tier: 2
+    notes: "Added 2026-08-24 (audit/10_config_gaps_and_consistency_test.md) as a lightweight placeholder: TODO-only in methods_benchmark.neprosins (no NCBI accession, genome, or transcriptome located). Mutualistic species (ant-associated); neprosin may be reduced/absent per the TODO note there. tier:2 reflects TODO-only status — flesh out if/when a real accession is found."
+
+  Nepenthes_rafflesiana:
+    taxid: 150990
+    code: Nraf
+    genome: none                   # No published genome as of 2026-08-24
+    pitcher_pH: null                # Reported to decrease from ~3.7 to ~1.9 over pitcher maturation
+                                     # (age-dependent); no single representative value assigned
+    clade: Caryophyllales
+    order: Caryophyllales
+    trap: pitfall_pitcher
+    carnivory_origin: 1
+    expression_sra: null
+    genome_source: null
+    tier: 2
+    notes: "Added 2026-08-24 (audit/10_config_gaps_and_consistency_test.md) as a lightweight placeholder: TODO-only in methods_benchmark.neprosins. N. x ventrata (C0HLV2) is used as a surrogate accession there since N. rafflesiana is one of N. x ventrata's parent species; no N. rafflesiana-specific NCBI accession located. tier:2 reflects TODO-only status."
+
+  Nepenthes_ventrata:
+    taxid: 1744888                  # NCBI taxonomy: "Nepenthes ventricosa x Nepenthes alata"
+                                     # (the parentage NCBI records under this taxid; commonly sold/
+                                     # cited horticulturally as Nepenthes x ventrata). Verified via
+                                     # NCBI eutils esearch/esummary against the taxonomy db, 2026-08-24.
+    code: Nven
+    genome: none                    # Only the mitochondrial genome is published (PMC7800874);
+                                     # no nuclear genome assembly as of 2026-08-24
+    pitcher_pH: null
+    clade: Caryophyllales
+    order: Caryophyllales
+    trap: pitfall_pitcher
+    carnivory_origin: 1
+    expression_sra: null
+    genome_source: null
+    tier: 1
+    notes: "Added 2026-08-24 (audit/10_config_gaps_and_consistency_test.md): source of C0HLV2 (Neprosin, mature form), the sequence used for the 7ZVA/7ZVB/7ZVC/7ZU8 crystal structures — the only experimental structure for any carnivorous plant digestive enzyme (see methods_benchmark.neprosins in enzyme_families.yaml). Horticultural hybrid, commonly N. ventricosa x N. alata."
+
   # --- Drosera (Caryophyllales, sticky trap) ---
   Drosera_capensis:
     taxid: 3563
@@ -77,7 +176,7 @@ carnivorous_species:
     clade: Caryophyllales
     order: Caryophyllales
     trap: sticky_flypaper
-    carnivory_origin: 2
+    carnivory_origin: 1
     expression_sra: null
     genome_source: "Butts et al. 2016, Proteins (transcriptome/partial genome)"
     tier: 1
@@ -90,7 +189,7 @@ carnivorous_species:
     clade: Caryophyllales
     order: Caryophyllales
     trap: sticky_flypaper
-    carnivory_origin: 2
+    carnivory_origin: 1
     expression_sra: null
     genome_source: null
     tier: 1
@@ -104,7 +203,7 @@ carnivorous_species:
     clade: Caryophyllales
     order: Caryophyllales
     trap: sticky_flypaper
-    carnivory_origin: 2
+    carnivory_origin: 1
     expression_sra: null
     genome_source: "Tarnita et al. 2023, PMC10662931"
     tier: 2
@@ -117,11 +216,30 @@ carnivorous_species:
     clade: Caryophyllales
     order: Caryophyllales
     trap: sticky_flypaper
-    carnivory_origin: 2
+    carnivory_origin: 1
     expression_sra: null
     genome_source: null
     tier: 2
     notes: "DbChitI-3 acidic chitinase characterized 2025 (Planta), active at pH 2.5"
+
+  Drosera_rotundifolia:
+    taxid: 173423
+    code: Drot
+    genome: PRJDB18922             # DDBJ BioProject; assembly "Droro_R1_v2" (WGS prefix BAAGII01),
+                                    # 139x coverage (Illumina HiSeq X Ten + Nanopore GridION).
+                                    # Verified directly by NCBI efetch on protein accession
+                                    # GAB2242148.1 (DBSOURCE line), 2026-08-24. No public GCA/GCF
+                                    # assembly accession located via web search as of this date —
+                                    # if one is published later, replace this BioProject accession.
+    pitcher_pH: null
+    clade: Caryophyllales
+    order: Caryophyllales
+    trap: sticky_flypaper
+    carnivory_origin: 1
+    expression_sra: null
+    genome_source: "Droro_R1_v2 assembly, BioProject PRJDB18922 (DDBJ); verified via NCBI protein record GAB2242148.1, 2026-08-24"
+    tier: 1
+    notes: "Added 2026-08-24 (audit/10_config_gaps_and_consistency_test.md): has real (non-TODO) accessions in tier1.chitinases_gh19_class_iv (GAB2242148.1, GAB2242147.1) and tier1.aspartic_proteases_a1b_homology (GAB2239788.1). Round-leaved sundew; classic model Drosera species, widely distributed Northern Hemisphere."
 
   # --- Dionaea (Caryophyllales, snap trap) ---
   Dionaea_muscipula:
@@ -132,7 +250,11 @@ carnivorous_species:
     clade: Caryophyllales
     order: Caryophyllales
     trap: snap_trap
-    carnivory_origin: 3
+    # carnivory_origin shared with Nepenthes/Drosera/Aldrovanda: Dionaea is nested
+    # within Droseraceae, which is sister to Nepenthaceae under a single common
+    # carnivorous ancestor per Fleck & Jobson 2023 (Plants 12:3356) and
+    # Fleischmann et al. 2018 (Ch. 3 in Ellison & Adamec eds.) — see header note.
+    carnivory_origin: 1
     expression_sra: PRJEB12493     # Bemm et al. 2016
     genome_source: "Palfalvi et al. 2020, Genome Research"
     tier: 1
@@ -146,7 +268,12 @@ carnivorous_species:
     clade: Caryophyllales
     order: Caryophyllales
     trap: snap_trap
-    carnivory_origin: 3            # Sister to Dionaea; shared snap-trap origin
+    # carnivory_origin shared with Nepenthes/Drosera/Dionaea: Aldrovanda is nested
+    # within Droseraceae (sister to Dionaea), which is sister to Nepenthaceae under
+    # a single common carnivorous ancestor per Fleck & Jobson 2023 and Fleischmann
+    # et al. 2018 — see header note. Previously coded as a separate origin (3) from
+    # Nepenthes(1)/Drosera(2); that split is not supported by the retrieved literature.
+    carnivory_origin: 1
     expression_sra: null
     genome_source: "Adamec et al. 2023 (BioProject PRJNA918534)"
     tier: 2
@@ -160,7 +287,7 @@ carnivorous_species:
     clade: Oxalidales
     order: Oxalidales
     trap: pitfall_pitcher
-    carnivory_origin: 4
+    carnivory_origin: 2
     expression_sra: PRJDB4470      # Fukushima et al. 2017
     genome_source: "Fukushima et al. 2017, Nature Ecology & Evolution"
     tier: 1
@@ -174,7 +301,7 @@ carnivorous_species:
     clade: Ericales
     order: Ericales
     trap: pitfall_pitcher
-    carnivory_origin: 5
+    carnivory_origin: 3
     expression_sra: null
     genome_source: "Tarnita et al. 2023, PMC10662931"
     tier: 1
@@ -187,7 +314,7 @@ carnivorous_species:
     clade: Ericales
     order: Ericales
     trap: pitfall_pitcher
-    carnivory_origin: 5
+    carnivory_origin: 3
     expression_sra: null
     genome_source: "Tarnita et al. 2023, PMC10662931"
     tier: 2
@@ -200,7 +327,7 @@ carnivorous_species:
     clade: Ericales
     order: Ericales
     trap: pitfall_pitcher
-    carnivory_origin: 5
+    carnivory_origin: 3
     expression_sra: null
     genome_source: "Tarnita et al. 2023, PMC10662931"
     tier: 2
@@ -214,7 +341,7 @@ carnivorous_species:
     clade: Ericales
     order: Ericales
     trap: pitfall_pitcher
-    carnivory_origin: 5
+    carnivory_origin: 3
     expression_sra: null
     genome_source: "Tarnita et al. 2023, PMC10662931"
     tier: 2
@@ -229,7 +356,7 @@ carnivorous_species:
     clade: Lamiales
     order: Lamiales
     trap: suction_bladder
-    carnivory_origin: 6
+    carnivory_origin: 4
     expression_sra: null
     genome_source: "Lan et al. 2017"
     tier: 1
@@ -242,7 +369,7 @@ carnivorous_species:
     clade: Lamiales
     order: Lamiales
     trap: sticky_flypaper
-    carnivory_origin: 6
+    carnivory_origin: 4
     expression_sra: null
     genome_source: "Tarnita et al. 2023, PMC10662931"
     tier: 2
@@ -255,7 +382,7 @@ carnivorous_species:
     clade: Lamiales
     order: Lamiales
     trap: sticky_flypaper
-    carnivory_origin: 6
+    carnivory_origin: 4
     expression_sra: null
     genome_source: null
     tier: 2
@@ -269,7 +396,7 @@ carnivorous_species:
     clade: Lamiales
     order: Lamiales
     trap: sticky_flypaper
-    carnivory_origin: 7            # Byblidaceae separate from Lentibulariaceae
+    carnivory_origin: 5            # Byblidaceae separate from Lentibulariaceae
     expression_sra: null
     genome_source: null
     tier: 2
@@ -331,6 +458,19 @@ outgroup_species:
     expression_sra: null
     tier: 1
     notes: "HvNEP-1 (UniProt M0W9B2) is a characterized nepenthesin-like aspartic protease — ideal outgroup for nepenthesin A1B alignment. Also has nucellin (no PSI insert) for structural comparison."
+
+  Triticum_dicoccoides:
+    taxid: 85692
+    code: Tdic
+    genome: GCA_002162155.1        # WEWSeq v1.0 (Avni et al. 2017, Science)
+    pitcher_pH: null
+    clade: Poales
+    order: Poales
+    trap: null
+    carnivorous: false
+    expression_sra: null
+    tier: 1
+    notes: "Added 2026-08-24 (audit/10_config_gaps_and_consistency_test.md). Wild emmer wheat (Triticum turgidum subsp. dicoccoides; T. aestivum progenitor) — not T. aestivum. Outgroup for tier1.aspartic_proteases_a1b_homology and methods_benchmark.nepenthesins (XP_037427783.1, annotated aspartic proteinase nepenthesin-2-like, confirming A1B subfamily). Avni Y et al. 2017, Science 357:93-97 (WEWSeq v1.0 genome)."
 
   # --- GH19 chitinase structural reference ---
   Secale_cereale:

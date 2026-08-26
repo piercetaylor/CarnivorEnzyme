@@ -21,25 +21,40 @@
 tier1:
 
   # ============================================================
-  # 1. GH19 CHITINASES (Class IV acidic chitinases)
+  # 1. GH19 CHITINASES — SPLIT: CLASS IV (convergence target) vs. CLASS I (structural only)
   # ============================================================
-  # Convergent substitutions: Fukushima et al. 2017, Nature Ecol. Evol., Fig. 3a
-  # CAZy family: GH19 (glycoside hydrolase family 19)
-  # Expected size: ~270-340 aa mature form
+  # RESTRUCTURED 2026-08-22 (audit/04_gh19_class_split.md):
+  #   The former single "chitinases_gh19" entry mixed two GH19 chitinase classes with
+  #   different domain architecture: Class I (intact Chitin_bind_1/CBM18 chitin-binding
+  #   domain, "loopful" catalytic domain) and Class IV (CBM18 with deletion/truncation,
+  #   "loopless" catalytic domain). Mixing classes in one alignment/tree confounds
+  #   orthology assignment and ancestral-state reconstruction because the domain-
+  #   architecture difference produces non-homologous alignment columns/gap patterns
+  #   unrelated to the catalytic-domain substitutions Fukushima et al. 2017 Fig. 3a
+  #   actually tracks. Verified directly: Yoneda et al. 2025 (FEBS Open Bio 15:1930-1944,
+  #   PDB 9JTR) states D. adelae chitinase (BAW35424.1) "belongs to class I of the GH19
+  #   family," with "a chitin-binding domain, also known as the hevein domain, at their
+  #   N-terminal region" as the defining Class I feature. D. binata QHN63861.1
+  #   (DbChitI-3) is independently described in Planta 2025 (PMC11725546) as an
+  #   "extracellular class I chitinase." The GH19 Engineering Database (PMC8547705)
+  #   confirms: "Class I chitinase consists of a CBM18 and 'loopful' GH19 catalytic
+  #   domain... class IV chitinase consists of a CBM18 with a deletion and 'loopless'
+  #   GH19 catalytic domain." Full sourcing and gate reasoning in
+  #   audit/04_gh19_class_split.md.
+  #
   # Key literature:
-  #   - Fukushima et al. 2017 — convergent substitutions identified
-  #   - Yoneda et al. 2025, FEBS Open Bio — D. adelae chitinase structurally characterized
-  #   - Yoneda et al. 2025: first carnivorous plant chitinase with experimental structure (PDB?)
-  #   - Drosera binata DbChitI-3 chitinase: pH optimum 2.5, induced by prey (Planta 2025)
+  #   - Fukushima et al. 2017 — convergent substitutions identified (Class IV target)
+  #   - Yoneda et al. 2025, FEBS Open Bio — D. adelae Class I chitinase, PDB 9JTR
+  #   - Drosera binata DbChitI-3 (Class I) chitinase: pH optimum 2.5, induced by prey (Planta 2025, PMC11725546)
   #   - GH19 Engineering Database (PMC8547705) — comprehensive sequence/diversity resource
   #   - Rye (Secale cereale) chitinase PDB 4J0L (1.75 Å): primary GH19 fold reference
-  #   - D. adelae chitinase PDB 9JTR (1.73 Å): FIRST carnivorous plant GH19 crystal structure
   #   - Nepenthes chitinase NkChit2b-1 (Springer 2025) — insect resistance
 
-  chitinases_gh19:
+  chitinases_gh19_class_iv:
     cazy: GH19
     merops: null
-    convergent_source: "Fukushima et al. 2017 Fig. 3a"
+    class: "IV"
+    convergent_source: "Fukushima et al. 2017 Fig. 3a — PRIMARY cross-lineage convergence target class (truncated/deleted CBM18 chitin-binding domain; see split rationale above and audit/04_gh19_class_split.md)"
     expected_length_aa: [250, 350]
     accessions:
 
@@ -66,17 +81,21 @@ tier1:
         - GAB2242147.1  # GENOME: Droror1_Dr00018922, GH19-like, 275 aa
 
       Drosera_capensis:
-        - BDB33378.1    # VERIFIED: Class I chitinase, 325 aa — NOTE: Class I not Class IV;
-                        # include for alignment context but flag as class_i=true
-                        # NOTE: No standalone accession for D. capensis class IV GH19 (DCAP_0533
-                        # identifier exists only in the draft genome, not submitted to GenBank).
-                        # Use AZZ09188.1 (class I, 314 aa) as proxy if class IV unavailable.
+        - TODO          # NO PUBLIC CLASS IV ACCESSION AVAILABLE (2026-08-22): DCAP_0533, the
+                        # D. capensis class IV GH19 gene identifier, exists only in an unsubmitted
+                        # draft genome and has never been deposited to GenBank/NCBI Protein.
+                        # BDB33378.1 was previously listed here as a "proxy" for the missing
+                        # class IV gene — that framing was WRONG: BDB33378.1 is a verified Class I
+                        # chitinase (different domain architecture; intact Chitin_bind_1/CBM18
+                        # domain), not a valid substitute for cross-lineage Class IV convergence
+                        # detection. It is now listed under chitinases_gh19_class_i instead, where
+                        # its actual class is used honestly (structural comparison only).
+                        # ACTION: monitor for D. capensis genome submission to NCBI/GenBank; re-check
+                        # for a standalone DCAP_0533 (or equivalent) class IV accession when available.
 
-      Drosera_adelae:
-        - BAW35424.1    # VERIFIED: Basic chitinase (GH19 class I), 321 aa; Yoneda et al. 2025,
-                        # FEBS Open Bio 15:1930-1944. Crystal structure deposited as PDB 9JTR (1.73 Å)
-                        # NOTE: This is GH19 class I (has full Chitin_bind_1 domain), not class IV.
-                        # Flag as class_i=true; include in alignment for cross-class comparison.
+      # NOTE: Drosera_adelae GH19 (BAW35424.1) — MOVED to chitinases_gh19_class_i (2026-08-22).
+      # It is a verified Class I chitinase (intact Chitin_bind_1/CBM18 domain; PDB 9JTR); see
+      # chitinases_gh19_class_i below and audit/04_gh19_class_split.md.
 
       # --- Dionaea (Caryophyllales, snap trap) ---
       Dionaea_muscipula:
@@ -140,10 +159,9 @@ tier1:
         - TODO          # NOT FOUND: Entrez search returned one hit not in size range.
                         # Genome JAOVYX000000000 proteins not individually indexed in NCBI.
 
-      Drosera_binata:
-        - QHN63861.1    # VERIFIED: Endochitinase class I (DbChitI-3), 321 aa; MN481117.1
-                        # Libantova et al. 2019 submission; pH optimum 2.5 (Planta 2025, PMC11725546)
-                        # GH19 confirmed (Glyco_hydro_19 + Chitin_bind_1 domains). Class I annotation.
+      # NOTE: Drosera_binata GH19 (QHN63861.1, DbChitI-3) — MOVED to chitinases_gh19_class_i
+      # (2026-08-22). It is a verified Class I chitinase (intact Chitin_bind_1/CBM18 domain);
+      # see chitinases_gh19_class_i below and audit/04_gh19_class_split.md.
 
       # --- Additional Nepenthes ---
       Nepenthes_mirabilis:
@@ -159,6 +177,29 @@ tier1:
         - Q9FRV0        # OUTGROUP VERIFIED: Rye class I GH19 chitinase (CHIC_SECCE), 266 aa
                         # Source sequence for PDB 4J0L (1.75 Å); DBREF in 4J0L confirms Q9FRV0
                         # Gene RSCC; CAA28969.1 was wrong (27 aa fragment)
+
+
+  # ============================================================
+  # 1B. GH19 CHITINASES — CLASS I — MOVED to methods_benchmark 2026-08-24
+  # ============================================================
+  # RESTRUCTURED 2026-08-24 (audit/10_config_gaps_and_consistency_test.md): chitinases_gh19_class_i
+  # contains exactly 3 species (Drosera_capensis/BDB33378.1, Drosera_adelae/BAW35424.1,
+  # Drosera_binata/QHN63861.1), all sharing carnivory_origin: 1 (Caryophyllales — see
+  # config/species.yaml). With convergence.min_lineages: 2 in config/config.yaml, a family
+  # entirely within one carnivory origin can never satisfy the cross-lineage convergence
+  # threshold. Snakefile:44-49 derives FAMILIES = list(data["tier1"].keys()), which feeds
+  # every convergence-related Snakemake target (phase2, phase3a, phase4a, phase5d, rule
+  # all) — leaving this family in tier1: guaranteed a header-only empty convergence output
+  # for it on every run, i.e. the exact "zero rows, exit 0" false-positive signature this
+  # remediation effort exists to eliminate. This was already flagged in the entry's own
+  # `note` field ("Structural comparison only — not used for cross-lineage convergence
+  # detection") but the entry itself remained under tier1: until now. Moved verbatim (all
+  # comments, accessions, and notes preserved) to methods_benchmark below — same treatment
+  # as nepenthesins/neprosins, moved out of tier1 on 2026-08-22 for the identical
+  # single-carnivory-origin reason (see the "4. NEPENTHESINS — MOVED" comment above and
+  # audit/03_merops_restructure_and_neprosin_rescope.md). See
+  # methods_benchmark.chitinases_gh19_class_i below for the full entry, and
+  # audit/10_config_gaps_and_consistency_test.md for verification.
 
 
   # ============================================================
@@ -224,7 +265,16 @@ tier1:
         - TODO          # NOT FOUND in NCBI protein search (genome JAUMHN000000000 not annotated)
 
       # Nepenthes_mirabilis PAP (ENA PRJEB86749 only; Goh 2025 S3 parsed April 2026):
-      Nepenthes_mirabilis_PAP:
+      # KEY FIXED 2026-08-24 (audit/10_config_gaps_and_consistency_test.md): this was
+      # previously keyed "Nepenthes_mirabilis_PAP" — a malformed species name with a
+      # family-disambiguation suffix awkwardly appended, which does not match any
+      # config/species.yaml entry. Renamed to the correct species key "Nepenthes_mirabilis".
+      # No plain "Nepenthes_mirabilis" key existed elsewhere in this family's accessions
+      # (checked before renaming — chitinases_gh19_class_iv and methods_benchmark.nepenthesins/
+      # neprosins each have their own separate "Nepenthes_mirabilis" entries under their own
+      # family accessions, which is fine; this rename only affects purple_acid_phosphatase),
+      # so this is a plain rename, not a merge.
+      Nepenthes_mirabilis:
         - TODO          # PARTIAL_RESOLVE: 27 PAP gene models found in Goh 2025 S3 (doi:10.1371/journal.pone.0322885.s003)
                         # Best active candidates (exclude INACTIVE-annotated entries):
                         #   Nep_mir_jg12124.t1 (426 aa): PF16656 N-term PAP + PF00149 + cd00839 + PF14008 + PANTHER PTHR22953:SF130
@@ -355,44 +405,52 @@ tier1:
 
 
   # ============================================================
-  # 4. NEPENTHESINS / DROSERASINS (Aspartic proteases, A1B)
+  # 4. NEPENTHESINS — MOVED to methods_benchmark 2026-08-22
   # ============================================================
-  # Primary digestive proteases of carnivorous plants
-  # Merops family: A01.073 (nepenthesin subgroup)
-  # Subfamilies:
-  #   Nepenthesins I/II (Nepenthes spp.) — contain unique nepenthesin insert domain
-  #   Droserasins (Drosera spp.) — related to pepsin
-  #   Dionain (Dionaea muscipula) — aspartic protease
-  # No experimental structure for nepenthesins (Kadek 2016 crystallized but coords not deposited)
+  # True Nepenthes nepenthesins (merops: A01.040) were split out of the former combined
+  # "nepenthesins" entry on 2026-08-22 (see aspartic_proteases_a1b_homology below for the
+  # other half of that split), then moved a second time, same day, out of tier1 entirely:
+  # because all Nepenthes species share ONE carnivory_origin (Caryophyllales carnivory is
+  # a single shared origin per Fleck & Jobson 2023 / Fleischmann et al. 2018 — see
+  # audit/02_carnivory_origin_reassignment.md), a Nepenthes-only family can never supply
+  # substitutions from >=2 independent origins, so it is mathematically incapable of
+  # producing a cross-lineage convergence result under min_lineages=2. It is retained
+  # under methods_benchmark: (below the methods_benchmark: key, alongside neprosins) as a
+  # within-Nepenthes structural/stability case study, not a Tier-1 convergence family.
+  # See audit/03_merops_restructure_and_neprosin_rescope.md for full reasoning and sources.
+
+  # ============================================================
+  # 4B. ASPARTIC PROTEASES, A1B-LIKE BY HOMOLOGY (droserasin, dionain-AP, Cephalotus AP,
+  #     Sarracenia AP) — NO independent MEROPS holotype
+  # ============================================================
+  # RESTRUCTURED 2026-08-22 (audit/03_merops_restructure_and_neprosin_rescope.md):
+  #   Split out of the former single "nepenthesins" entry (see section 4 above for the
+  #   full rationale). These sequences are A1B-like by homology / domain architecture
+  #   (presence of the plant-specific insert, PSI) but MEROPS itself lists no holotype
+  #   for droserasin, dionain, Cephalotus AP, or Sarracenia AP — verified directly by
+  #   fetching MEROPS family A1's full holotype/peptidase-and-homologues listing
+  #   (ebi.ac.uk/merops/cgi-bin/famsum?family=A1), which contains exactly one carnivorous-
+  #   plant holotype (A01.040, nepenthesin). Butts et al. 2016 (Proteins 84:1517)
+  #   describes droserasins only as "classified as belonging to the MEROPS A1 class,
+  #   which also includes pepsin and the nepenthesins" — a homology/family-level
+  #   statement, not a holotype-sharing claim.
+  # No merops holotype code — see note field below.
   # Key literature:
-  #   - Athauda et al. 2004, Biochem J — nepenthesin I and II characterization
-  #   - Butts et al. 2016, Proteins — droserasin structure prediction
-  #   - Takahashi et al. 2011, FEBS Lett — nepenthesin substrate specificity
+  #   - Butts et al. 2016, Proteins — droserasin structure prediction; PSI confirmed
+  #     (100-residue plant-specific insert; CORRECTED 2026-08-22 — this PSI-length figure
+  #     is from Sprague-Piercy et al. 2020, Biomolecules 10:1069, DOI 10.3390/biom10071069,
+  #     not "Butts et al. 2020" as an earlier pass of this file mistakenly attributed it)
+  #   - Fukushima et al. 2017 — Cephalotus AP included in original convergence analysis
 
-  nepenthesins:
-    merops: A01.073
-    subfamily: A1B
-    experimental_pdb: null          # Kadek 2016 crystallized at 2.8Å but coords NOT deposited
-    convergent_source: "Fukushima et al. 2017"
-    expected_length_aa: [280, 650]  # Wide range: dionains ~300 aa, nepenthesins ~437 aa,
-                                    # phytepsins up to ~510 aa, Cephalotus AP 612 aa
+  aspartic_proteases_a1b_homology:
+    merops: null
+    experimental_pdb: null          # No experimental structure for any A1B-homology member
+    subfamily: "A1B-like by homology only (Butts et al. 2016); no MEROPS holotype"
+    note: "A1B-like by homology only (Butts et al. 2016); no MEROPS holotype — verified directly against MEROPS 2026-08-22, see audit/03_merops_restructure_and_neprosin_rescope.md. Spans 3 independent carnivory_origin values under current config/species.yaml numbering (Drosera+Dionaea=origin 1, Cephalotus=origin 2, Sarracenia=origin 3) — confirmed >= min_lineages(2), remains a valid tier1 cross-lineage convergence target on its own even without the Nepenthes-only nepenthesins entry (moved to methods_benchmark 2026-08-22)."
+    convergent_source: "Fukushima et al. 2017 (Cephalotus AP explicitly included); valid standalone cross-lineage convergence target (Drosera/Dionaea origin 1, Cephalotus origin 2, Sarracenia origin 3); combine with methods_benchmark.nepenthesins only if a manual Fukushima et al. 2017-style combined A1B analysis is needed downstream"
+    expected_length_aa: [280, 650]  # Wide range: dionains ~300 aa, phytepsins up to ~510 aa,
+                                    # Cephalotus AP 612 aa
     accessions:
-
-      # --- Nepenthes (canonical nepenthesins) ---
-      Nepenthes_gracilis:
-        - BAD07474.1    # VERIFIED: Nepenthesin I (Nep I), 437 aa; Athauda et al. 2004 ANCHOR
-                        # Protein accession for AB114914 mRNA (elink nuccore→protein: 41016421)
-        - BAD07475.1    # VERIFIED: Nepenthesin II (Nep II), 438 aa; Athauda et al. 2004 ANCHOR
-                        # Protein accession for AB114915 mRNA
-                        # NOTE: GMG99884.1 removed from here (kept only in neprosins — DUF239 family)
-
-      Nepenthes_alata:
-        - BBF98357.1    # VERIFIED: Nepenthesin III, 442 aa; Kadek et al. 2016
-        - BAV14385.1    # VERIFIED: Nepenthesin II, 437 aa
-
-      Nepenthes_mirabilis:
-        - AFV26024.1    # VERIFIED: Nepenthesin 1, 437 aa; Takahashi et al. 2011
-        - AFV26025.1    # VERIFIED: Nepenthesin 2, 437 aa; Takahashi et al. 2011
 
       # --- Drosera (droserasins) ---
       Drosera_capensis:
@@ -414,7 +472,8 @@ tier1:
       Drosera_spatulata:
         - TODO          # NOT FOUND: Entrez search returned no A1B aspartic protease for this taxon.
 
-      # --- Dionaea (dionain) ---
+      # --- Dionaea (dionain — aspartic protease isoforms; NOT the Tier 2 cysteine-protease
+      #     dionain-2/dionain-4, APM86431.1/APM86430.1, which are a distinct C1 papain-like family) ---
       Dionaea_muscipula:
         - A0A0E3GLN3    # VERIFIED UniProt: Dionain-1, aspartic protease, 352 aa; Palfalvi 2020
                         # NOTE: 352 aa is shorter than canonical nepenthesins (437 aa) — may be
@@ -460,6 +519,8 @@ tier1:
         - TODO          # NOT FOUND in NCBI protein search
 
       # --- Outgroups (plant aspartic proteases, A1 family) ---
+      # Duplicated from nepenthesins above: both split families need the same A1B/A1
+      # outgroups for phylogenetic rooting. See audit doc for rationale.
       Arabidopsis_thaliana:
         - NP_187876.2   # OUTGROUP VERIFIED: Eukaryotic aspartyl protease family, 461 aa
         - NP_565911.1   # OUTGROUP VERIFIED: Eukaryotic aspartyl protease family, 442 aa
@@ -485,79 +546,6 @@ tier1:
         - XP_019076990.1 # OUTGROUP VERIFIED: probable aspartyl protease At4g16563-like, 458 aa
                         # Replaces XP_002267025.1 (WRONG — that accession is phosphatidylinositol
                         # 4-kinase gamma 5, completely wrong enzyme).
-
-
-  # ============================================================
-  # 5. NEPROSINS (Glutamic peptidases, G3 / DUF239)
-  # ============================================================
-  # Unique to Nepenthes — not found in other carnivorous lineages
-  # Merops family: G03.001 (neprosin-1)
-  # Experimental structures available: 7ZVA, 7ZVB, 7ZVC, 7ZU8
-  # Substrate: proline-containing peptides (cleaves after Pro)
-  # Biotech application: gluten/gliadin digestion (coeliac disease therapy)
-  # Key literature:
-  #   - Del Amo-Maestro et al. 2022, Nat. Commun. — crystal structures (PDB 7ZVA-C, 7ZU8)
-  #   - Schräder et al. 2017, Mol Cell Proteomics — neprosin as prolyl endoprotease
-  #   - Tiew & Goh 2022 — placed in glutamic peptidase family G3
-  #   - Ting et al. 2026 — gluten detoxification with neprosin
-
-  neprosins:
-    merops: G03.001
-    subfamily: G3
-    experimental_pdb:
-      - "7ZVA"    # Zymogen native, 1.80 Å — primary validation target
-      - "7ZVB"    # Mature form, 2.35 Å
-      - "7ZVC"    # Mature form (crystal form 2), 1.85 Å
-      - "7ZU8"    # Zymogen + inhibitor Lu-Xo4, 2.05 Å
-    convergent_source: "Not applicable — Nepenthes-specific family"
-    expected_length_aa: [370, 470]
-    notes: "Nepenthes-specific; no other carnivorous lineage has this family. Convergence analysis not applicable but structural comparison across Nepenthes species IS planned."
-    accessions:
-
-      # --- Nepenthes gracilis (primary species) ---
-      Nepenthes_gracilis:
-        - GMG99884.1    # GENOME: Nepgr_001724, 467 aa (Saul 2023) — may be neprosin
-        - GMH01265.1    # GENOME: Nepgr_003104, 445 aa (Saul 2023) — may be neprosin
-                        # NOTE: Saul 2023 genome predicts ~8 neprosin paralogs; confirm annotation
-
-      # --- Nepenthes ampullaria (high-pH pitcher, pH~5 — useful for pH comparison) ---
-      Nepenthes_ampullaria:
-        - ARA95696.1    # VERIFIED: Neprosin 2, 421 aa
-        - ARA95695.1    # VERIFIED: Neprosin 1, 421 aa
-
-      # --- Nepenthes ventrata (source of crystal structures) ---
-      Nepenthes_ventrata:
-        - C0HLV2.1      # VERIFIED UniProt: Neprosin (Npr1), 380 aa — mature form
-                        # This is the sequence used for crystal structures 7ZVA-C
-
-      # --- Additional Nepenthes species (for cross-species comparison) ---
-      Nepenthes_mirabilis:
-        - TODO          # PARTIAL_RESOLVE: Goh 2025 genome (PRJEB86749, ENA) not in NCBI Protein.
-                        # S3 supplementary (doi:10.1371/journal.pone.0322885.s003) parsed April 2026.
-                        # PF03080 (Neprosin): 36 Pfam hits; first hit Nep_mir_jg11529.t1 (domain E=7.8e-10)
-                        # DUF239 PANTHER: 64 hits; first hit Nep_mir_jg39601.t1
-                        # NOTE: Domain hit length (110 aa) is partial domain score; full gene model
-                        # may be 370-470 aa — confirm by pulling full sequence from ENA PRJEB86749.
-                        # ACTION: Download ENA PRJEB86749 protein FASTA; extract all PF03080/DUF239 hits;
-                        # retain those 370-470 aa; store as resources/accessions/n_mirabilis_neprosin.fasta
-                        # N. mirabilis is common swamp pitcher plant (pH~3.0).
-
-      Nepenthes_rafflesiana:
-        - TODO          # NOT IN NCBI: No N. rafflesiana genome published (April 2026).
-                        # N. × ventrata (C0HLV2) is a hybrid of N. rafflesiana × N. alata;
-                        # C0HLV2 is the closest available surrogate — note this limitation.
-                        # Lee 2016 transcriptome (PRJNA study, doi:10.1021/acs.jproteome.6b00224)
-                        # contains neprosin transcripts but not deposited as NCBI accessions.
-
-      Nepenthes_bicalcarata:
-        - TODO          # NOT IN NCBI: No published genome or neprosin accession for N. bicalcarata.
-                        # Mutualistic species (ants in pitchers); neprosin may be reduced/absent.
-                        # Search transcriptome data if available from pitcher fluid proteomics.
-
-      # NOTE: No neprosin homologs found outside Nepenthes as of April 2026
-      # All DUF239/G3 family members are restricted to the Nepenthes lineage
-      # No outgroup sequences needed for this family (no convergence analysis)
-      # BUT: include for pH-correlated stability comparison across Nepenthes
 
 
 # ============================================================
@@ -600,6 +588,259 @@ tier2:
     description: "Esterases/lipases in carnivorous plant secretomes"
     convergent_source: "Not yet characterized"
     accessions: {}
+
+
+# ============================================================
+# METHODS BENCHMARK / WITHIN-LINEAGE CASE STUDY FAMILIES
+# ============================================================
+# RE-SCOPED 2026-08-22 (audit/03_merops_restructure_and_neprosin_rescope.md):
+#   Neprosins moved here from tier1. Neprosin (DUF239 / MEROPS U74 family) has zero
+#   orthologs outside Nepenthes — independently re-confirmed this session (WebSearch/
+#   WebFetch of Ting et al. 2022 and a 2018 PeerJ digestive-enzyme review; no neprosin
+#   reported in Drosera, Dionaea, Cephalotus, Sarracenia, Utricularia, Pinguicula, or
+#   Byblis). This was already established in ORTHOLOGY_AND_FAMILY_SCOPE_2026-05-12.md
+#   Section 2. Because Snakefile derives FAMILIES = list(data["tier1"].keys()) (see
+#   Snakefile lines 44-49), removing "neprosins" from tier1 simply drops it from the
+#   per-family expand() targets in phase2/phase3a/phase4a/phase5d and rule `all` — this
+#   is the intended effect (no cross-lineage convergence run on a single-origin family).
+#   Confirmed no rule in workflow/rules/*.smk hardcodes "neprosins" or reads FAMILIES
+#   independently of Snakefile (grepped workflow/rules — no FAMILIES/tier1 references
+#   found there). One dangling reference found and left as-is (out of this task's
+#   explicit scope): config/config.yaml fep.substrates_for_fep still has a "neprosins:"
+#   key; harmless today since workflow/scripts/run_fep.py does not yet exist (not yet
+#   built per CLAUDE.md Phase 5D), but flagged for whoever builds run_fep.py — it will
+#   also need a substrate entry for the new "aspartic_proteases_a1b_homology" key if
+#   FEP is ever run on that family.
+#   Retained here as: (1) AF3/Chai-1 structure-prediction validation benchmark (PDB
+#   7ZVA/7ZVB/7ZVC/7ZU8 — the only experimental structure for any carnivorous plant
+#   digestive enzyme); (2) within-Nepenthes case study (pitcher-pH vs neprosin
+#   substitution comparison across N. gracilis/alata/ampullaria/ventrata/mirabilis).
+
+methods_benchmark:
+
+  # ============================================================
+  # GH19 CHITINASES — CLASS I (structural comparison only, NOT a convergence target)
+  # ============================================================
+  # MOVED HERE from tier1 2026-08-24 (audit/10_config_gaps_and_consistency_test.md): all 3
+  # species in this family (Drosera_capensis, Drosera_adelae, Drosera_binata) share
+  # carnivory_origin: 1 (Caryophyllales — see config/species.yaml), so this family can
+  # never satisfy convergence.min_lineages: 2 and was producing a guaranteed header-only
+  # empty convergence-detection output every run under tier1:. Same rationale/treatment as
+  # nepenthesins/neprosins (moved out of tier1 2026-08-22, see below and
+  # audit/03_merops_restructure_and_neprosin_rescope.md). See the "1B. GH19 CHITINASES —
+  # CLASS I — MOVED" placeholder comment left in tier1's former section 1B for the
+  # cross-reference. Moved verbatim — no comments, accessions, or notes were dropped.
+  #
+  # RESTRUCTURED 2026-08-22 (audit/04_gh19_class_split.md): split out of the former single
+  # "chitinases_gh19" entry (see tier1 section 1 for full rationale). These sequences have
+  # an intact Chitin_bind_1/CBM18 chitin-binding domain (verified: Yoneda et al. 2025 FEBS
+  # Open Bio 15:1930-1944 for D. adelae BAW35424.1; Planta 2025 PMC11725546 for D. binata
+  # QHN63861.1) — different domain architecture from the Class IV target class in
+  # tier1.chitinases_gh19_class_iv. Do NOT combine with chitinases_gh19_class_iv in a
+  # single alignment/tree for cross-lineage convergence detection; use only for structural
+  # comparison (e.g. against the D. adelae PDB 9JTR crystal structure).
+
+  chitinases_gh19_class_i:
+    cazy: GH19
+    merops: null
+    class: "I"
+    note: "Structural comparison only — not used for cross-lineage convergence detection (different domain architecture: intact Chitin_bind_1/CBM18 domain, vs. the truncated/deleted CBM18 of the chitinases_gh19_class_iv target class). See audit/04_gh19_class_split.md. MOVED from tier1 to methods_benchmark 2026-08-24 — see audit/10_config_gaps_and_consistency_test.md — because all 3 species share a single carnivory_origin and the family can never meet min_lineages: 2."
+    convergent_source: "Not applicable — Class I chitinases; not a Fukushima et al. 2017 Fig. 3a convergence target (that target class is Class IV, see tier1.chitinases_gh19_class_iv)"
+    expected_length_aa: [300, 330]
+    accessions:
+
+      # --- Drosera (Caryophyllales, sticky trap) ---
+      Drosera_capensis:
+        - BDB33378.1    # VERIFIED: Class I chitinase, 325 aa. MOVED here 2026-08-22 from
+                        # chitinases_gh19_class_iv, where it was previously mislabeled as a
+                        # Class IV "proxy" — it is genuinely Class I (different domain
+                        # architecture) and useful here for structural comparison, but is NOT
+                        # the D. capensis Class IV ortholog. See the TODO under
+                        # chitinases_gh19_class_iv's Drosera_capensis entry for the actual
+                        # (unresolved) Class IV gap.
+
+      Drosera_adelae:
+        - BAW35424.1    # VERIFIED: Basic chitinase (GH19 class I), 321 aa; Yoneda et al. 2025,
+                        # FEBS Open Bio 15:1930-1944. Crystal structure deposited as PDB 9JTR (1.73 Å)
+                        # Directly confirmed class I: "Sequence analysis of D. adelae chitinase has
+                        # revealed that it belongs to class I of the GH19 family... A distinguishing
+                        # feature of class I chitinases is the presence of a chitin-binding domain,
+                        # also known as the hevein domain, at their N-terminal region" (Yoneda et al. 2025).
+
+      Drosera_binata:
+        - QHN63861.1    # VERIFIED: Endochitinase class I (DbChitI-3), 321 aa; MN481117.1
+                        # Libantova et al. 2019 submission; pH optimum 2.5 (Planta 2025, PMC11725546)
+                        # GH19 confirmed (Glyco_hydro_19 + Chitin_bind_1 domains). Class I annotation
+                        # independently confirmed in Planta 2025 (PMC11725546), which describes it as
+                        # an "extracellular class I chitinase."
+
+  # ============================================================
+  # NEPENTHESINS (Aspartic proteases, A1B) — Nepenthes-only, MEROPS holotype family
+  # ============================================================
+  # Moved here from tier1 2026-08-22 — see the "4. NEPENTHESINS — MOVED" comment left in
+  # tier1's former section 4 for the full cross-reference, and
+  # audit/03_merops_restructure_and_neprosin_rescope.md for sources/reasoning.
+  # Primary digestive proteases of carnivorous plants.
+  # Merops holotype: A01.040 (nepenthesin, Nepenthes gracilis) — verified directly against
+  #   MEROPS (ebi.ac.uk/merops/cgi-bin/famsum?family=A1 and pepsum?id=A01.040), 2026-08-22.
+  # No experimental structure for nepenthesins (Kadek 2016 crystallized but coords not deposited)
+  # Key literature:
+  #   - Athauda et al. 2004, Biochem J — nepenthesin I and II characterization
+  #   - Takahashi et al. 2011, FEBS Lett — nepenthesin substrate specificity
+
+  nepenthesins:
+    merops: A01.040
+    subfamily: A1B
+    note: "PSI-confirmed, MEROPS holotype (Nepenthes gracilis); verified directly against MEROPS 2026-08-22 — see audit/03_merops_restructure_and_neprosin_rescope.md"
+    experimental_pdb: null          # Kadek 2016 crystallized at 2.8Å but coords NOT deposited
+    convergent_source: "Not applicable — Nepenthes-only, single carnivory_origin (see config/species.yaml); cannot produce cross-lineage convergence results under min_lineages=2. Retained as a within-Nepenthes structural/stability case study (FoldX, ESM-2, AF3) across N. gracilis/alata/mirabilis, not a Phase 2 convergence-detection target. Combine with aspartic_proteases_a1b_homology (tier1) if a manual Fukushima et al. 2017-style combined A1B cross-lineage analysis is ever needed downstream."
+    expected_length_aa: [420, 450]  # Nepenthes nepenthesins cluster tightly ~437-442 aa
+    accessions:
+
+      # --- Nepenthes (canonical nepenthesins) ---
+      Nepenthes_gracilis:
+        - BAD07474.1    # VERIFIED: Nepenthesin I (Nep I), 437 aa; Athauda et al. 2004 ANCHOR
+                        # Protein accession for AB114914 mRNA (elink nuccore→protein: 41016421)
+        - BAD07475.1    # VERIFIED: Nepenthesin II (Nep II), 438 aa; Athauda et al. 2004 ANCHOR
+                        # Protein accession for AB114915 mRNA
+                        # NOTE: GMG99884.1 removed from here (kept only in neprosins — DUF239 family)
+
+      Nepenthes_alata:
+        - BBF98357.1    # VERIFIED: Nepenthesin III, 442 aa; Kadek et al. 2016
+        - BAV14385.1    # VERIFIED: Nepenthesin II, 437 aa
+
+      Nepenthes_mirabilis:
+        - AFV26024.1    # VERIFIED: Nepenthesin 1, 437 aa; Takahashi et al. 2011
+        - AFV26025.1    # VERIFIED: Nepenthesin 2, 437 aa; Takahashi et al. 2011
+
+      # --- Outgroups (plant aspartic proteases, A1 family) ---
+      # Duplicated in tier1.aspartic_proteases_a1b_homology: both split families need
+      # the same A1B/A1 outgroups for phylogenetic rooting. See audit doc for rationale.
+      Arabidopsis_thaliana:
+        - NP_187876.2   # OUTGROUP VERIFIED: Eukaryotic aspartyl protease family, 461 aa
+        - NP_565911.1   # OUTGROUP VERIFIED: Eukaryotic aspartyl protease family, 442 aa
+
+      Solanum_lycopersicum:
+        - XP_004253208.1 # OUTGROUP VERIFIED: ASPARTIC PROTEASE IN GUARD CELL 2, 486 aa
+        - XP_019070220.2 # OUTGROUP VERIFIED: ASPARTIC PROTEASE IN GUARD CELL 1-like, 455 aa
+
+      Hordeum_vulgare:
+        - P42210        # OUTGROUP VERIFIED: HvPhytepsin (ASPR_HORVU), 508 aa — A1B phytepsin
+                        # UniProt Swiss-Prot; well-characterized barley vacuolar A1B aspartic protease
+                        # M0W9B2 (HvNEP-1) was inaccessible (empty UniProt response, accession obsolete)
+                        # P42210 is the best available barley A1B outgroup
+        - XP_045019345.1 # OUTGROUP: Hordeum nucellin-like (no PSI insert), 393 aa
+                        # Useful as structural contrast: nucellin lacks the PSI domain of nepenthesins
+                        # NOTE: this "nucellin-like" annotation is independently consistent with the
+                        # MEROPS A01.073 nucellin holotype (Oryza sativa) verified above — nucellin
+                        # lacking PSI is the defining A1A/A1B boundary marker (Chen & Foolad 1997).
+
+      Triticum_dicoccoides:
+        - XP_037427783.1 # OUTGROUP VERIFIED: aspartic proteinase nepenthesin-2-like, 469 aa
+                        # Triticum dicoccoides (emmer wheat, T. aestivum progenitor) — not T. aestivum.
+                        # Annotation "nepenthesin-2-like" confirms A1B subfamily.
+
+      Vitis_vinifera:
+        - XP_019076990.1 # OUTGROUP VERIFIED: probable aspartyl protease At4g16563-like, 458 aa
+                        # Replaces XP_002267025.1 (WRONG — that accession is phosphatidylinositol
+                        # 4-kinase gamma 5, completely wrong enzyme).
+
+  # ============================================================
+  # NEPROSINS (Glutamic peptidases; MEROPS family U74, unknown catalytic type)
+  # ============================================================
+  # Unique to Nepenthes — not found in other carnivorous lineages
+  # MEROPS code corrected 2026-08-22: verified directly against MEROPS
+  # (ebi.ac.uk/merops/cgi-bin/pepsum?id=G03.001 and famsum?family=U74).
+  #   - G03.001 is WRONG for neprosin: it is the holotype for "strawberry mottle virus
+  #     glutamic peptidase" (a plant-virus RNA2 polyprotein protease, family G3) — a
+  #     completely different organism/protein.
+  #   - The correct, MEROPS-official current code for neprosin is U74.001, family U74
+  #     ("unknown catalytic type"), holotype "neprosin (Nepenthes ventrata)", MEROPS
+  #     accession MER0351045, family established 2017-01-06 (MEROPS release 11.0).
+  #   - CORRECTED 2026-08-22 (opus checker, audit/03_merops_restructure_and_neprosin_rescope.md):
+  #     the paper describing neprosin's catalytic mechanism is Ting TY, Baharin A, Ramzi AB,
+  #     Ng CL, Goh HH (2022), Plant Physiology and Biochemistry 183:23-35 — NOT "Tiew & Goh
+  #     2022" as an earlier pass of this file mistakenly cited (wrong author list, drawn from
+  #     search-snippet reconstruction rather than the primary text). The PUBLISHED version of
+  #     this paper states neprosin "founds a new glutamic peptidase family" — it does NOT
+  #     itself claim MEROPS family "G3" membership; the "G3" wording appeared only in an
+  #     earlier bioRxiv v1 preprint and was dropped by the authors before publication.
+  #     Separately, Oda & Wlodawer 2023 (Biochemistry 62:672-694, MEROPS release 12.4) DOES
+  #     discuss neprosin within family G3's structural section, based on shared β-sandwich
+  #     glutamic-peptidase fold architecture — a real but narrower structural-similarity
+  #     observation, distinct from a formal MEROPS family-membership claim. MEROPS itself
+  #     still lists neprosin only under U74.
+  # Experimental structures available: 7ZVA, 7ZVB, 7ZVC, 7ZU8
+  # Substrate: proline-containing peptides (cleaves after Pro)
+  # Biotech application: gluten/gliadin digestion (coeliac disease therapy)
+  # Key literature:
+  #   - Del Amo-Maestro et al. 2022, Nat. Commun. — crystal structures (PDB 7ZVA-C, 7ZU8)
+  #   - Schräder et al. 2017, Mol Cell Proteomics — neprosin as prolyl endoprotease
+  #   - Ting et al. 2022, Plant Physiol. Biochem. 183:23-35 — neprosin founds a new glutamic
+  #     peptidase family (catalytic Glu-Glu dyad); does not itself claim "G3" (see note above)
+  #   - Oda & Wlodawer 2023, Biochemistry 62:672-694 — notes neprosin's structural (not formal
+  #     taxonomic) similarity to MEROPS family G3 architecture
+  #   - Ting et al. 2026 — gluten detoxification with neprosin
+
+  neprosins:
+    merops: U74.001
+    merops_family: U74
+    merops_note: "MEROPS-official: family U74 (unknown catalytic type), holotype neprosin (Nepenthes ventrata), MER0351045. Neprosin's own describing paper (Ting et al. 2022, Plant Physiol. Biochem. 183:23-35) states it founds 'a new' glutamic peptidase family and does not itself claim MEROPS 'G3' membership; Oda & Wlodawer 2023 separately notes structural (not formal) similarity to G3. Verified directly against MEROPS 2026-08-22, see audit/03_merops_restructure_and_neprosin_rescope.md"
+    subfamily: "Glutamic peptidase, MEROPS-official family U74 (unknown catalytic type); structurally related to family G3 by architecture (Oda & Wlodawer 2023), not a formal G3 member"
+    experimental_pdb:
+      - "7ZVA"    # Zymogen native, 1.80 Å — primary validation target
+      - "7ZVB"    # Mature form, 2.35 Å
+      - "7ZVC"    # Mature form (crystal form 2), 1.85 Å
+      - "7ZU8"    # Zymogen + inhibitor Lu-Xo4, 2.05 Å
+    convergent_source: "Not applicable — Nepenthes-specific family; retained as AF3/Chai-1 structure-prediction validation benchmark and within-Nepenthes pitcher-pH case study, not a cross-lineage convergence family (re-scoped out of tier1 2026-08-22)"
+    expected_length_aa: [370, 470]
+    notes: "Nepenthes-specific; no other carnivorous lineage has this family (independently re-confirmed 2026-08-22 via WebSearch of Ting et al. 2022 and a 2018 PeerJ carnivorous-plant protease review — no neprosin reported outside Nepenthes). Convergence analysis not applicable but structural comparison across Nepenthes species IS planned. Moved from tier1 to methods_benchmark 2026-08-22 (was already recommended in ORTHOLOGY_AND_FAMILY_SCOPE_2026-05-12.md but not yet applied to this file)."
+    accessions:
+
+      # --- Nepenthes gracilis (primary species) ---
+      Nepenthes_gracilis:
+        - GMG99884.1    # GENOME: Nepgr_001724, 467 aa (Saul 2023) — may be neprosin
+        - GMH01265.1    # GENOME: Nepgr_003104, 445 aa (Saul 2023) — may be neprosin
+                        # NOTE: Saul 2023 genome predicts ~8 neprosin paralogs; confirm annotation
+
+      # --- Nepenthes ampullaria (high-pH pitcher, pH~5 — useful for pH comparison) ---
+      Nepenthes_ampullaria:
+        - ARA95696.1    # VERIFIED: Neprosin 2, 421 aa
+        - ARA95695.1    # VERIFIED: Neprosin 1, 421 aa
+
+      # --- Nepenthes ventrata (source of crystal structures) ---
+      Nepenthes_ventrata:
+        - C0HLV2.1      # VERIFIED UniProt: Neprosin (Npr1), 380 aa — mature form
+                        # This is the sequence used for crystal structures 7ZVA-C
+
+      # --- Additional Nepenthes species (for cross-species comparison) ---
+      Nepenthes_mirabilis:
+        - TODO          # PARTIAL_RESOLVE: Goh 2025 genome (PRJEB86749, ENA) not in NCBI Protein.
+                        # S3 supplementary (doi:10.1371/journal.pone.0322885.s003) parsed April 2026.
+                        # PF03080 (Neprosin): 36 Pfam hits; first hit Nep_mir_jg11529.t1 (domain E=7.8e-10)
+                        # DUF239 PANTHER: 64 hits; first hit Nep_mir_jg39601.t1
+                        # NOTE: Domain hit length (110 aa) is partial domain score; full gene model
+                        # may be 370-470 aa — confirm by pulling full sequence from ENA PRJEB86749.
+                        # ACTION: Download ENA PRJEB86749 protein FASTA; extract all PF03080/DUF239 hits;
+                        # retain those 370-470 aa; store as resources/accessions/n_mirabilis_neprosin.fasta
+                        # N. mirabilis is common swamp pitcher plant (pH~3.0).
+
+      Nepenthes_rafflesiana:
+        - TODO          # NOT IN NCBI: No N. rafflesiana genome published (April 2026).
+                        # N. × ventrata (C0HLV2) is a hybrid of N. rafflesiana × N. alata;
+                        # C0HLV2 is the closest available surrogate — note this limitation.
+                        # Lee 2016 transcriptome (PRJNA study, doi:10.1021/acs.jproteome.6b00224)
+                        # contains neprosin transcripts but not deposited as NCBI accessions.
+
+      Nepenthes_bicalcarata:
+        - TODO          # NOT IN NCBI: No published genome or neprosin accession for N. bicalcarata.
+                        # Mutualistic species (ants in pitchers); neprosin may be reduced/absent.
+                        # Search transcriptome data if available from pitcher fluid proteomics.
+
+      # NOTE: No neprosin homologs found outside Nepenthes as of April 2026 (re-confirmed 2026-08-22)
+      # All DUF239/U74 family members are restricted to the Nepenthes lineage
+      # No outgroup sequences needed for this family (no convergence analysis)
+      # BUT: include for pH-correlated stability comparison across Nepenthes
 
 
 # ============================================================
@@ -660,22 +901,33 @@ non_carnivorous_homologs:
       Nepenthesins, droserasins, and dionains all belong to A1B. Non-carnivorous
       A1B proteases include phytepsins (vacuolar processing), nucellin, and
       HvNEP-1 (barley apoplastic protease).
+      RESTRUCTURED 2026-08-22: config/enzyme_families.yaml's former single "nepenthesins"
+      tier1 entry was split into "nepenthesins" (Nepenthes-only, MEROPS holotype A01.040)
+      and "aspartic_proteases_a1b_homology" (droserasin/dionain-AP/Cephalotus-AP/
+      Sarracenia-AP, A1B-like by homology only, no MEROPS holotype). Each entry below is
+      annotated with `supports_family` indicating which split entry(ies) it is contextual
+      reference material for — see audit/03_merops_restructure_and_neprosin_rescope.md.
     entries:
       Hordeum_vulgare_HvNEP1:
         accession: M0W9B2            # UniProt; barley apoplastic nepenthesin-like AP
         subfamily: A1B
         has_PSI_insert: true
+        supports_family: ["nepenthesins", "aspartic_proteases_a1b_homology"]  # generic A1B reference relevant to both split entries
         notes: >
           HvNEP-1 is the best non-carnivorous A1B reference. Expressed in grain
           endosperm; apoplastic localization parallels carnivorous plant secretome
           localization. Characterized for substrate specificity (Frontiers Plant Sci 2021).
           Use as primary outgroup for nepenthesin phylogeny.
+          NOTE: M0W9B2 was found inaccessible in NCBI/UniProt lookups when curating the
+          tier1 accession list (see nepenthesins Hordeum_vulgare entry, P42210 used
+          instead as the working outgroup); retained here as documentation only.
 
       Hordeum_vulgare_nucellin:
         accession: AAB96882.1        # VERIFIED: Nucellin, 410 aa; Chen & Foolad 1997,
                                      # Plant Mol Biol 35:821-831 (PMID 9426602); U87148.1
         subfamily: A1 (nucellin-type)
         has_PSI_insert: false
+        supports_family: ["nepenthesins", "aspartic_proteases_a1b_homology"]  # boundary marker relevant to both split entries; also independently corroborates the corrected MEROPS A01.073 = nucellin holotype (Oryza sativa) verified 2026-08-22
         notes: >
           Nucellin defines the boundary between A1A and A1B subfamilies (Chen &
           Foolad 1997). No PSI domain. Including alongside HvNEP-1 lets us map
@@ -687,6 +939,7 @@ non_carnivorous_homologs:
                                      # NP_172655.1 is the correct RefSeq for Arabidopsis aspartic proteinase A1.
         subfamily: A1B
         has_PSI_insert: true
+        supports_family: ["nepenthesins", "aspartic_proteases_a1b_homology"]  # generic A1B reference relevant to both split entries
         notes: >
           AtAP1 is the canonical A1B plant aspartic protease (phytepsin). Has PSI
           insert. Not secreted into apoplast under normal conditions. Useful for
@@ -695,6 +948,7 @@ non_carnivorous_homologs:
       Solanum_lycopersicum_AP:
         accession: XP_004253208.1    # Guard cell AP-2; 486 aa (previously added as outgroup)
         subfamily: A1B
+        supports_family: ["nepenthesins", "aspartic_proteases_a1b_homology"]  # same accession is used directly as a working outgroup in both split tier1 entries (Solanum_lycopersicum)
         notes: >
           Tomato aspartic protease with guard-cell expression; provides Solanales
           outgroup perspective for A1B evolution.
@@ -705,6 +959,7 @@ non_carnivorous_homologs:
                                      # PDB 1B5F (2.0 Å) is the processed 2-chain form; Q9XFX3 is full precursor.
         subfamily: A1B
         has_PSI_insert: true
+        supports_family: ["nepenthesins", "aspartic_proteases_a1b_homology"]  # generic A1B structural/functional reference relevant to both split entries
         notes: >
           Cardosins are secreted to the cell wall/apoplast in floral/seed tissues.
           Best-characterized non-carnivorous secreted plant AP with apoplastic

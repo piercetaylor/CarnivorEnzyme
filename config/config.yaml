@@ -20,6 +20,10 @@ alignment:
 phylogeny:
   model: MFP
   bootstrap: 1000
+  binary: iqtree3                 # Executable name; set to 'iqtree' if the cluster module exposes it as such
+  # Used by the ancestral pass ONLY when the pass-1 .iqtree report contains no
+  # ModelFinder verdict (i.e. `model:` above was set to an explicit model, not MFP).
+  fallback_model: LG+G4
 
 convergence:
   posterior_threshold: 0.8
@@ -116,7 +120,11 @@ fep:
   # Substrates to use for binding ΔΔG (physiological, not chromogenic)
   substrates_for_fep:
     neprosins: "PQPQLPYP"
-    chitinases_gh19: "GlcNAc4"
+    chitinases_gh19_class_iv: "GlcNAc4"  # UPDATED 2026-08-22: chitinases_gh19 split into
+                                          # chitinases_gh19_class_iv / _class_i (see
+                                          # config/enzyme_families.yaml and
+                                          # audit/04_gh19_class_split.md). FEP substrate applies
+                                          # to the Class IV convergence-target family only.
     rnase_t2: "ApA"
     purple_acid_phosphatase: "phosphoserine"   # physiological PAP substrate (not pNPP)
     nepenthesins: "VHLTPEEK"

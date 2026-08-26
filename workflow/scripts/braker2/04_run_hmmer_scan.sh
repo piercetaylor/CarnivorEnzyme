@@ -25,24 +25,33 @@ if [[ ! -f "$PFAM_HMM" ]]; then
 fi
 
 # --- Define target HMM accessions per enzyme family ---
+# UPDATED 2026-08-22: enzyme_families.yaml keys changed (audit/03_merops_restructure_and_neprosin_rescope.md,
+# audit/04_gh19_class_split.md). None of the 5 TODO species scanned by this script (Sarracenia_alata,
+# Darlingtonia, Heliamphora, Pinguicula_moranensis, Drosera_spatulata) is a Nepenthes species, so any A1B
+# aspartic-protease hit here can only ever belong to the homology-only bucket, never the Nepenthes-only
+# holotyped "nepenthesins" entry (which moved to methods_benchmark and isn't a hmmer-scan target for these
+# species anyway) — key renamed accordingly, PF number/length cutoff unchanged.
 declare -A FAMILY_HMMS=(
-    # GH19 chitinase — PF00182 (Glyco_hydro_19)
-    ["chitinases_gh19"]="PF00182"
+    # GH19 chitinase — PF00182 (Glyco_hydro_19). Convergence target is Class IV; a fresh hmmer hit still
+    # needs manual Class I vs IV domain-architecture triage (Chitin_bind_1 intact vs truncated) before
+    # being filed under chitinases_gh19_class_iv vs chitinases_gh19_class_i — this script only finds
+    # candidates, it doesn't classify them.
+    ["chitinases_gh19_class_iv"]="PF00182"
     # Purple acid phosphatase — PF00149 (Calcineurin-like) + PF16656 (PAP N-term)
     # Use PF00149 as the conserved catalytic domain marker
     ["purple_acid_phosphatase"]="PF00149"
     # RNase T2 — PF00445 (RNase T2 family)
     ["rnase_t2"]="PF00445"
     # A1B aspartic protease — PF00026 (Asp) + PF01951 (Asp_protease_2/PSI)
-    ["nepenthesins"]="PF00026"
+    ["aspartic_proteases_a1b_homology"]="PF00026"
 )
 
 # Length cutoffs per family (minimum aa for a plausible full-length prediction)
 declare -A MIN_LEN=(
-    ["chitinases_gh19"]="200"
+    ["chitinases_gh19_class_iv"]="200"
     ["purple_acid_phosphatase"]="350"
     ["rnase_t2"]="180"
-    ["nepenthesins"]="280"
+    ["aspartic_proteases_a1b_homology"]="280"
 )
 
 SPECIES=(
@@ -53,6 +62,8 @@ SPECIES=(
     "sarracenia_alata"
 )
 
+n_scanned=0
+
 for species in "${SPECIES[@]}"; do
     proteome="${PROTEOME_DIR}/${species}.faa"
 
@@ -62,6 +73,7 @@ for species in "${SPECIES[@]}"; do
     fi
 
     echo "=== $species ==="
+    n_scanned=$((n_scanned + 1))
 
     for family in "${!FAMILY_HMMS[@]}"; do
         pfam_acc="${FAMILY_HMMS[$family]}"
@@ -85,7 +97,23 @@ for species in "${SPECIES[@]}"; do
             > /dev/null
 
         # Extract hit sequence IDs (col 1, skip comment lines)
-        hit_ids=$(grep -v '^#' "$hit_tbl" | awk '{print $1}' | sort -u)
+        # NOTE: grep -v exits 1 when the .tblout has zero non-comment lines (a
+        # legitimate "hmmsearch found nothing" result) — that must be tolerated
+        # under `set -euo pipefail`. But grep exit code >=2 (unreadable/missing
+        # file, real I/O error) is a different situation entirely and must NOT be
+        # swallowed: a blanket `|| true` around the whole pipeline can't tell
+        # "no hits" apart from "couldn't read the file" or a failure in awk/sort,
+        # and previously reported all of them identically as "0 hits". Isolate the
+        # grep call so its exit code can be inspected before deciding to continue.
+        set +e
+        raw_hits=$(grep -v '^#' "$hit_tbl")
+        grep_rc=$?
+        set -e
+        if (( grep_rc > 1 )); then
+            echo "ERROR: failed to read $hit_tbl (grep exit code $grep_rc)" >&2
+            exit 1
+        fi
+        hit_ids=$(printf '%s\n' "$raw_hits" | awk '{print $1}' | sort -u)
 
         if [[ -z "$hit_ids" ]]; then
             echo "  $family: 0 hits"
@@ -111,11 +139,18 @@ for r in kept:
     r.description = f"family=${family} species=${species} source=braker2"
 
 SeqIO.write(kept, out_fa, "fasta")
-print(f"  ${family}: {len(hit_ids)} hmmer hits → {len(kept)} kept (≥{min_len} aa) → {out_fa}")
+if len(hits) < len(hit_ids):
+    print(f"  WARNING: {len(hit_ids) - len(hits)} hmmer hit ID(s) not found in proteome FASTA — check .tblout matches the proteome file")
+print(f"  ${family}: {len(hit_ids)} hmmer hits → {len(hits)} resolved → {len(kept)} kept (≥{min_len} aa) → {out_fa}")
 EOF
 
     done
 done
+
+if (( n_scanned == 0 )); then
+    echo "ERROR: no proteomes found under $PROTEOME_DIR — run 00_download_genomes.sh through 03_extract_proteins.sh first" >&2
+    exit 1
+fi
 
 echo ""
 echo "=== Summary ==="
@@ -125,5 +160,5 @@ echo "Next steps:"
 echo "  1. Inspect hits manually (check lengths, review annotations)"
 echo "  2. Add local: entries to enzyme_families.yaml:"
 echo "     e.g.  Darlingtonia_californica:"
-echo "             - local:resources/accessions/tarnita2023_by_family/darlingtonia_californica_chitinases_gh19.faa"
+echo "             - local:resources/accessions/tarnita2023_by_family/darlingtonia_californica_chitinases_gh19_class_iv.faa"
 echo "  3. Re-run fetch_sequences.py (after adding local: support)"

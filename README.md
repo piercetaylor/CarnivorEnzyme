@@ -14,7 +14,9 @@ A reproducible Snakemake pipeline testing whether **convergent amino acid substi
 
 ## The Question
 
-> **Across nine independent origins of carnivory, do convergent amino acid substitutions in digestive enzymes track adaptation to pitcher fluid pH (1.9–6.0), and which evolutionary trajectory — functional gain, stability-function tradeoff, or neutral drift — characterizes each convergent site?**
+> **Across five independent origins of carnivory, do convergent amino acid substitutions in digestive enzymes track adaptation to pitcher fluid pH (1.9–6.0), and which evolutionary trajectory — functional gain, stability-function tradeoff, or neutral drift — characterizes each convergent site?**
+>
+> *(Corrected 2026-08-22: carnivory within Caryophyllales — Nepenthes, Drosera, Dionaea, Aldrovanda — is one shared origin, not four separate ones; see `config/species.yaml` and `audit/02_carnivory_origin_reassignment.md`.)*
 
 This is the open question explicitly flagged by Albert/Fukushima 2026 (*Trends in Genetics*) as the structural-functional follow-up to Fukushima et al. 2017's sequence-level convergence detection, framed against the quantitative pitcher-pH phenotype documented by Pavlovič 2025 (*New Phytologist*) and Freund 2022 (*Plant Physiology*).
 
@@ -32,7 +34,7 @@ This is the open question explicitly flagged by Albert/Fukushima 2026 (*Trends i
 
 ## Background
 
-Carnivory has evolved independently at least nine times within the angiosperms — in *Nepenthes*, *Drosera*, *Dionaea*, and *Aldrovanda* (Caryophyllales); *Cephalotus* (Oxalidales); *Sarracenia*, *Darlingtonia*, and *Heliamphora* (Ericales); *Utricularia* and *Pinguicula* (Lamiales/Lentibulariaceae); and *Byblis* (Lamiales/Byblidaceae). Each lineage independently co-opted pre-existing hydrolase gene families — chitinases, acid phosphatases, RNases, and proteases — for extracellular digestive function.
+Carnivory has evolved independently at least five times within the angiosperms — once in Caryophyllales (a single shared origin ancestral to *Nepenthes*, *Drosera*, *Dionaea*, and *Aldrovanda*; Fleck & Jobson 2023, *Plants* 12(19):3356; Fleischmann et al. 2018, in Ellison & Adamec, eds., *Carnivorous Plants: Physiology, Ecology, and Evolution*, OUP, ch. 3); *Cephalotus* (Oxalidales); *Sarracenia*, *Darlingtonia*, and *Heliamphora* (Ericales); *Utricularia* and *Pinguicula* (Lamiales/Lentibulariaceae); and *Byblis* (Lamiales/Byblidaceae). Each lineage independently co-opted pre-existing hydrolase gene families — chitinases, acid phosphatases, RNases, and proteases — for extracellular digestive function.
 
 Fukushima et al. (2017, *Nat. Ecol. Evol.*) established that this convergence extends below the phenotypic level: the same amino acid substitutions recur at homologous alignment positions across phylogenetically independent lineages at a rate significantly exceeding neutral expectation. The structural and functional consequences of these substitutions remain uncharacterized — a question explicitly named as open by the Albert/Fukushima 2026 *Trends in Genetics* review.
 
@@ -64,23 +66,34 @@ No published study has applied this classification to convergent substitutions i
 - **Chugunov et al. 2025** (*RSC Chem. Biol.* 6:975) experimentally validated that FoldX and evolutionary scoring capture orthogonal properties in one enzyme, but did not implement the quadrant.
 - The **Rubisco convergence study** (bioRxiv 2025.10.08.681247) used FoldX on convergent plant enzyme sites — but one family only, FoldX-only, no evolutionary axis.
 
-CarnivorEnzyme is the first to apply the stability × evolution classification to **convergent substitutions across five enzyme families and nine independent lineage origins**, with quantitative correlation against pitcher fluid pH.
+CarnivorEnzyme is the first to apply the stability × evolution classification to **convergent substitutions across four cross-lineage enzyme families and five independent lineage origins** (plus two single-lineage *Nepenthes* families retained as structure-prediction methods benchmarks), with quantitative correlation against pitcher fluid pH.
 
 ---
 
 ## Target Enzyme Families (Tier 1)
 
-All five families have published convergent substitutions (Fukushima et al. 2017) and are expressed in the digestive secretome of multiple independent lineages.
+> **Restructured 2026-08-22** (see `audit/03_merops_restructure_and_neprosin_rescope.md` and
+> `audit/04_gh19_class_split.md`), with GH19 Class I moved out of tier1 on 2026-08-24 (see
+> `audit/10_config_gaps_and_consistency_test.md`). Four tier1 families are valid cross-lineage
+> convergence targets; GH19 Class I, nepenthesins, and neprosins all live under
+> `methods_benchmark:`, not `tier1:`, since each is confined to a single carnivory origin
+> (GH19 Class I's three *Drosera* species all share the one Caryophyllales origin; nepenthesins
+> and neprosins are *Nepenthes*-only) and a single-origin family cannot produce a
+> `min_lineages: 2` cross-lineage convergence result. GH19 Class I is additionally kept out of
+> the Class IV alignment/tree because it has a different domain architecture (intact CBM18
+> chitin-binding domain vs. Class IV's truncated/deleted CBM18).
 
-| Family | Class | Digestive role | Reference structure |
-| ------ | ----- | -------------- | ------------------- |
-| GH19 chitinases | Glycoside hydrolase 19 | Chitin hydrolysis from arthropod cuticle | 4J0L (*Secale cereale*, 1.75 Å) |
-| Nepenthesins / droserasins | A1B aspartic protease | Bulk proteolysis; optimum pH 2–3 | 1B5F (*Cynara cardunculus*, 2.0 Å) |
-| Neprosins | G3 glutamic peptidase | Prolyl endopeptidase; Pro-Xaa cleavage | 7ZVA/B/C (*N.* × *ventrata*, 1.80–2.35 Å) |
-| Purple acid phosphatases | Fe-Zn/Fe-Mn binuclear metalloenzyme | Organic phosphate liberation | 1RDP (*Glycine max*, 2.65 Å) |
-| RNase T2 (S-like) | Ribonuclease T2 | RNA hydrolysis; phosphate scavenging | 1IYC (*Pyrus communis*, 1.50 Å) |
+| Family | Class | Digestive role | Reference structure | Convergence target? |
+| ------ | ----- | -------------- | ------------------- | -------------------- |
+| GH19 chitinases, Class IV (`chitinases_gh19_class_iv`) | Glycoside hydrolase 19 | Chitin hydrolysis from arthropod cuticle | 4J0L (*Secale cereale*, 1.75 Å) | Yes — primary Fukushima 2017 Fig. 3a target |
+| GH19 chitinases, Class I (`methods_benchmark.chitinases_gh19_class_i`) | Glycoside hydrolase 19 | Chitin hydrolysis (intact CBM18 chitin-binding domain) | PDB 9JTR (*D. adelae*, 1.73 Å) | No — single-origin structural comparison only |
+| Aspartic proteases, A1B-like by homology (`aspartic_proteases_a1b_homology`: droserasin, dionain-AP, *Cephalotus* AP, *Sarracenia* AP; no MEROPS holotype) | A1B aspartic protease | Bulk proteolysis; optimum pH 2–3 | 1B5F (*Cynara cardunculus*, 2.0 Å) | Yes — spans Drosera+Dionaea, Cephalotus, Sarracenia origins |
+| Purple acid phosphatases (`purple_acid_phosphatase`) | Fe-Zn/Fe-Mn binuclear metalloenzyme | Organic phosphate liberation | 1RDP (*Glycine max*, 2.65 Å) | Yes |
+| RNase T2, S-like (`rnase_t2`) | Ribonuclease T2 | RNA hydrolysis; phosphate scavenging | 1IYC (*Pyrus communis*, 1.50 Å) | Yes |
+| Nepenthesins (`methods_benchmark.nepenthesins`; MEROPS A01.040, *Nepenthes*-only) | A1B aspartic protease | Bulk proteolysis; optimum pH 2–3 | 1B5F (*Cynara cardunculus*, 2.0 Å) | No — single-origin methods benchmark |
+| Neprosins (`methods_benchmark.neprosins`; MEROPS U74.001, "unknown catalytic type" — structurally, not taxonomically, related to family G3 per Oda & Wlodawer 2023) | Glutamic peptidase | Prolyl endopeptidase; Pro-Xaa cleavage | 7ZVA/B/C (*N.* × *ventrata*, 1.80–2.35 Å) | No — single-origin methods benchmark |
 
-Neprosins are the only glutamic peptidases identified in plants (Tiew & Goh 2022). Their crystal structures revealed a catalytic dyad mechanistically distinct from aspartic and serine proteases, and their strict prolyl endopeptidase activity has generated clinical interest in celiac disease therapy (gluten contains proline-rich epitopes resistant to human gastrointestinal proteases).
+Neprosins are the only glutamic peptidases identified in plants (Ting et al. 2022, *Plant Physiology and Biochemistry* 183:23–35; corrected 2026-08-22 from a prior "Tiew & Goh 2022" misattribution — see `audit/03_merops_restructure_and_neprosin_rescope.md`). Their crystal structures revealed a catalytic dyad mechanistically distinct from aspartic and serine proteases, and their strict prolyl endopeptidase activity has generated clinical interest in celiac disease therapy (gluten contains proline-rich epitopes resistant to human gastrointestinal proteases).
 
 ---
 
@@ -147,16 +160,22 @@ All results are aggregated into a **SQLite atlas** with tables for enzymes, stru
 
 ## Lineage Coverage
 
+> **Corrected 2026-08-22** (see `config/species.yaml` header and `audit/02_carnivory_origin_reassignment.md`):
+> carnivory within Caryophyllales is **one shared origin**, not one per genus. Fleck & Jobson
+> (2023, *Plants* 12(19):3356) and Fleischmann et al. (2018, in Ellison & Adamec, eds.,
+> *Carnivorous Plants: Physiology, Ecology, and Evolution*, OUP, ch. 3) both describe *Nepenthes*,
+> *Drosera*, *Dionaea*, and *Aldrovanda* as descending from a single common carnivorous ancestor.
+> This table's origin numbering now matches `config/species.yaml`'s `carnivory_origin` field
+> exactly (5 origins total, not 7).
+
 | Origin | Order | Species | Genome status |
 | ------ | ----- | ------- | ------------- |
-| 1 | Caryophyllales | *Nepenthes gracilis*, *N. mirabilis* | GCA_030504385.1; PRJEB86749 (PacBio HiFi, 2025) |
-| 2 | Caryophyllales | *Drosera capensis* (12x), *D. spatulata*, *D. regia* | draft / dodecaploid |
-| 3 | Caryophyllales | *Dionaea muscipula* (4x), *Aldrovanda vesiculosa* | tetraploid / partial |
-| 4 | Oxalidales | *Cephalotus follicularis* | GCA_001941015.1 |
-| 5 | Ericales | *Sarracenia purpurea* | bioRxiv 2025.12.26.696377 (chromosome-scale, Dec 2025) |
-| 5 | Ericales | *Darlingtonia californica*, *Heliamphora ciliata* | Tarnita 2023 (raw assembly; BRAKER2 annotation in progress) |
-| 6 | Lamiales (Lentibulariaceae) | *Utricularia gibba*, *Pinguicula gigantea*, *P. moranensis* | GCA_002189035.1; bioRxiv 2025.04.05.646448 |
-| 7 | Lamiales (Byblidaceae) | *Byblis filifolia* | no published genome |
+| 1 | Caryophyllales | *Nepenthes gracilis*, *N. mirabilis*, *Drosera capensis* (12x), *D. spatulata*, *D. regia*, *Dionaea muscipula* (4x), *Aldrovanda vesiculosa* | GCA_030504385.1; PRJEB86749 (PacBio HiFi, 2025); draft / dodecaploid (*Drosera*); tetraploid / partial (*Dionaea*/*Aldrovanda*) |
+| 2 | Oxalidales | *Cephalotus follicularis* | GCA_001941015.1 |
+| 3 | Ericales | *Sarracenia purpurea* | bioRxiv 2025.12.26.696377 (chromosome-scale, Dec 2025) |
+| 3 | Ericales | *Darlingtonia californica*, *Heliamphora ciliata* | Tarnita 2023 (raw assembly; BRAKER2 annotation in progress) |
+| 4 | Lamiales (Lentibulariaceae) | *Utricularia gibba*, *Pinguicula gigantea*, *P. moranensis* | GCA_002189035.1; bioRxiv 2025.04.05.646448 |
+| 5 | Lamiales (Byblidaceae) | *Byblis filifolia* | no published genome |
 
 **Non-carnivorous outgroups:** *Arabidopsis thaliana*, *Vitis vinifera*, *Solanum lycopersicum*, *Hordeum vulgare*, *Secale cereale*.
 

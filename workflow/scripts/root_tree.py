@@ -9,8 +9,22 @@ Tip-label format expected from fetch_sequences.py:
     {Species_name}|{accession}   (e.g. Arabidopsis_thaliana|NP_180287.2)
 
 The script matches on the Species_name prefix before the pipe character.
+
+Two auxiliary outputs feed the second IQ-TREE pass (run_ancestral.py):
+
+  --output-plain      the same rooted topology with every internal-node label
+                      removed. The pass-1 labels are `NodeN/aLRT/UFboot` strings
+                      whose support values describe clades of the *unrooted* tree;
+                      after rerooting they no longer describe the clade they sit on,
+                      and IQ-TREE copies input labels straight through to the
+                      `.state` file's `Node` column. Stripping them lets IQ-TREE
+                      assign clean, self-consistent `NodeN` labels instead.
+  --output-outgroups  the matched outgroup tip labels, comma-separated, so the
+                      ASR pass can pass them to IQ-TREE's `-o` and write its tree
+                      outgroup-first.
 """
 
+import copy
 import logging
 import sys
 from pathlib import Path
@@ -18,7 +32,6 @@ from pathlib import Path
 import click
 import yaml
 from Bio import Phylo
-from io import StringIO
 
 
 logger = logging.getLogger(__name__)
@@ -59,6 +72,22 @@ def _find_outgroup_tips(tree, outgroup_species: list[str]) -> list[str]:
     return matched
 
 
+def _strip_internal_labels(tree):
+    """Return a copy of `tree` with all internal-node names and confidences removed.
+
+    Leaf labels and every branch length are preserved; only the internal-node
+    annotations (IQ-TREE's `NodeN/aLRT/UFboot` strings) are dropped, so the Newick
+    handed to IQ-TREE `-te` carries topology and branch lengths and nothing else.
+    """
+    stripped = copy.deepcopy(tree)
+    for clade in stripped.find_clades():
+        if clade.is_terminal():
+            continue
+        clade.name = None
+        clade.confidence = None
+    return stripped
+
+
 @click.command()
 @click.option(
     "--treefile", "-t",
@@ -90,6 +119,20 @@ def _find_outgroup_tips(tree, outgroup_species: list[str]) -> list[str]:
     required=True,
     help="Output path for rooted Newick treefile.",
 )
+@click.option(
+    "--output-plain",
+    type=click.Path(),
+    default=None,
+    help="Optional second output: the same rooted tree with internal-node labels "
+         "stripped, for use as IQ-TREE's -te fixed topology in the ancestral pass.",
+)
+@click.option(
+    "--output-outgroups",
+    type=click.Path(),
+    default=None,
+    help="Optional third output: the matched outgroup tip labels, comma-separated, "
+         "for use as IQ-TREE's -o argument in the ancestral pass.",
+)
 @click.option("--verbose", is_flag=True, help="Enable DEBUG logging.")
 def main(
     treefile: str,
@@ -97,6 +140,8 @@ def main(
     families_config: str,
     family: str,
     output: str,
+    output_plain: str | None,
+    output_outgroups: str | None,
     verbose: bool,
 ) -> None:
     """Root a gene tree using outgroup taxa defined in species.yaml."""
@@ -149,6 +194,20 @@ def main(
     output_path.parent.mkdir(parents=True, exist_ok=True)
     Phylo.write(tree, str(output_path), "newick")
     logger.info("Wrote rooted tree to %s", output_path)
+
+    if output_plain:
+        plain_path = Path(output_plain)
+        plain_path.parent.mkdir(parents=True, exist_ok=True)
+        Phylo.write(_strip_internal_labels(tree), str(plain_path), "newick")
+        logger.info("Wrote label-stripped rooted tree to %s", plain_path)
+
+    if output_outgroups:
+        outgroups_path = Path(output_outgroups)
+        outgroups_path.parent.mkdir(parents=True, exist_ok=True)
+        outgroups_path.write_text(",".join(outgroup_tips) + "\n", encoding="utf-8")
+        logger.info(
+            "Wrote %d outgroup tip label(s) to %s", len(outgroup_tips), outgroups_path
+        )
 
 
 if __name__ == "__main__":

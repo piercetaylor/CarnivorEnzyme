@@ -1,3 +1,7 @@
+> **ARCHIVED 2026-08-25.** Superseded by `TODO.md` at the repo root. Preserved for history — do not
+> treat as current (Tier 0-pre's HPC-verification blocker was carried forward into the new TODO.md
+> Tier 0; everything else here predates the 2026-08-25 method-stack decisions).
+
 # CarnivorEnzyme — Tasks
 
 > Date: 2026-05-12
@@ -7,7 +11,76 @@ Tasks are organized by tier (urgency × impact), not phase. Each task has an exp
 
 ---
 
-## Tier 0 — Pivot Corrections (THIS WEEK)
+## Tier 0-pre — Verify the new ancestral-reconstruction pipeline on real HPC (2026-08-24, blocking)
+
+**Do this before running Phase 2/3 for real.** `workflow/scripts/detect_convergence.py` had two
+compounding architectural bugs (tree/`.state` node-name collision + rooting-order mismatch between
+`root_tree.py`'s rerooted tree and IQ-TREE's ancestral reconstruction) that made it silently
+produce fabricated, statistically-significant "convergent site" output from data with zero real
+substitutions — confirmed by actually running a real IQ-TREE 3.1.3 binary against synthetic data.
+Fixed with a real architectural change (see `audit/11_ancestral_reconstruction_architecture_fix.md`):
+`phylogeny.smk` now runs IQ-TREE in two passes (topology → root → a new `ancestral_reconstruction`
+rule that runs ASR on the already-rooted, fixed topology via `-te`), and `detect_convergence.py` no
+longer invents node names at all — it validates node-by-node against the `.asr.state` file and
+raises loudly on any mismatch.
+
+This was verified with a real IQ-TREE binary on synthetic data (positive control: a planted
+substitution was recovered at the exact right position and origin set; 4 negative controls all
+raised correctly) — but NOT against this project's real alignments/trees, and NOT via an actual
+Snakemake run (the shell layer doesn't work on the Windows dev machine this was built on; DAG was
+validated by `snakemake -n` dry-run only, with every shell command executed manually instead).
+
+- [ ] Run the full `phylogeny.smk` → `convergence.smk` chain for at least one real family (start
+      with `chitinases_gh19_class_iv`, the best-populated family) on Hellbender and confirm
+      `results/convergence/{family}.convergent_sites.tsv` has real, non-fabricated rows
+- [ ] Confirm `-te`/`--ancestral`/`-alrt` flag compatibility and the IQ-TREE binary name (`iqtree`
+      vs `iqtree2` vs `iqtree3`) actually match what's installed on Hellbender — this was verified
+      against a locally-downloaded IQ-TREE 3.1.3 Windows binary, not the HPC installation
+- [ ] Fix the separate, pre-existing `ChildIOException` Snakemake DAG bug found while testing this
+      (`retrieve.smk`'s `fetch_all_sequences` rule outputs `results/sequences/`, which is the
+      parent directory of `combine_family_sequences`'s output — Snakemake rejects a directory
+      output that's an ancestor of another rule's output). Blocks ANY full-pipeline dry run, not
+      just this fix's rules. Not fixed in this remediation pass — out of scope, flagged only.
+- [ ] Follow-up: `workflow/scripts/extract_ancestor.py` has similar node-naming fallback patterns
+      (levelorder-index naming, substring `.state` matching) to what was just fixed in
+      `detect_convergence.py`. Currently unreachable in the normal path post-fix, but worth the
+      same scrutiny before Phase 4A (ancestral structure reconstruction) is trusted.
+
+## Tier 0 — Pivot Corrections (dated 2026-05-12 — STALE, unexecuted as of 2026-08-24)
+
+**Status check (2026-08-24 remediation pass, see `audit/06_doc_sync_and_bloat_trim.md`):** none of
+T0.1–T0.3 below have actually been executed — `workflow/scripts/score_esm2.py` still exists under
+its original name, no `score_prosst.py`/`score_saprot.py` exist, and the Snakefile is still the
+original phase1–phase9 structure, not the Section A–G reorganization described in
+`PROJECT_RESTRUCTURE_2026-05-12.md`. This tier has been sitting open for over three months. Before
+resuming work on it, re-confirm the decisions below are still current — the ProteinGym leaderboard
+and stability-predictor landscape (`FOLDX_REVIEW_2026-05-12.md`,
+`FOLDX_ALTERNATIVES_AF3_2026-05-12.md`) move fast enough that a May 2026 snapshot may already be dated.
+
+**Blocking open decisions (from `PROJECT_RESTRUCTURE_2026-05-12.md` §8 — none formally resolved):**
+- [ ] Target journal tier: Outcome A (MBE/GBE, fully computational) vs. commit to Outcome B (wet-lab now)?
+- [ ] Second stability axis: SPURS vs. RaSP? (`PROJECT_RESTRUCTURE_2026-05-12.md` recommends SPURS)
+- [ ] Primary PLM: ProSST vs. SaProt vs. keep ESM-2? (recommends ProSST, ESM-2 as baseline)
+- [ ] EVcouplings vs. EVE for the evolutionary-constraint axis? (recommends EVE)
+- [ ] Wet-lab collaboration timeline — start outreach now or stay computational? (see T4.1)
+
+### T0.0 — Snakefile reorganization: phase-based → question-driven Section A–G (NOT YET TRACKED)
+**Owner:** Claude Code
+**Dependency:** the 5 open decisions above
+**Effort:** ~1 day (per `PROJECT_RESTRUCTURE_2026-05-12.md` §6 "Migration Plan", Step 3)
+**Why:** `PROJECT_RESTRUCTURE_2026-05-12.md` proposes reorganizing the pipeline from method-organized
+phases (Phase 1–9) into paper-section-organized targets (Section A Dataset, B Phylogeny, C
+Selection+Convergence, D Structure, E Mutation Effects, F Phenotype Correlation — new, G
+Integration, S Supplementary-gated, W Wet-lab-optional) so the code structure mirrors the eventual
+manuscript's IMRaD structure. Full target Snakefile content is written out in that doc §2 and §5 —
+this task is to actually apply it, not re-derive it.
+- [ ] Re-read `PROJECT_RESTRUCTURE_2026-05-12.md` §§2, 5, 6 in full before starting (don't re-derive from memory)
+- [ ] Confirm the file/rule rename list in §5 is still accurate against the current repo state (this
+      remediation pass already changed several family keys in `config/enzyme_families.yaml` since
+      May — the `FAMILIES` list and any hardcoded family names in the new phenotype/selection rules
+      described there need to be checked against the current `tier1`/`methods_benchmark` split)
+- [ ] Only proceed once the 5 blocking decisions above are resolved — F1–F3 (phenotype/PGLS) and
+      the SPURS/RaSP/ProSST/EVE choices are load-bearing for what the new Section E/F rules do
 
 These three are blocking the science narrative. Resolve before any further compute.
 
@@ -32,10 +105,12 @@ These three are blocking the science narrative. Resolve before any further compu
 **Dependency:** none
 **Effort:** ~1 day for species.yaml schema; weeks for actual sequence retrieval (BRAKER2 still required for Tarnita 2023)
 
-- [ ] Add to [config/species.yaml](config/species.yaml):
-  - `Sarracenia_purpurea`: carnivory_origin=5, genome=`bioRxiv 2025.12.26.696377` (Albert/Lindqvist chromosome-scale)
-  - `Pinguicula_gigantea`: carnivory_origin=6, genome=`bioRxiv 2025.04.05.646448`
-  - `Nepenthes_mirabilis`: carnivory_origin=1, genome=`PRJEB86749` (Goh 2025 PacBio HiFi)
+- [ ] Add to [config/species.yaml](config/species.yaml) (origin numbers corrected 2026-08-24 to match
+      the post-T2 numbering — Caryophyllales=1, Oxalidales=2, Ericales=3, Lentibulariaceae=4,
+      Byblidaceae=5; see `config/species.yaml` header and `audit/02_carnivory_origin_reassignment.md`):
+  - `Sarracenia_purpurea`: carnivory_origin=3 (Ericales; was miswritten as 5 here pre-correction), genome=`bioRxiv 2025.12.26.696377` (Albert/Lindqvist chromosome-scale)
+  - `Pinguicula_gigantea`: carnivory_origin=4 (Lentibulariaceae; was miswritten as 6 here pre-correction), genome=`bioRxiv 2025.04.05.646448`
+  - `Nepenthes_mirabilis`: carnivory_origin=1 (Caryophyllales — single shared origin, unchanged), genome=`PRJEB86749` (Goh 2025 PacBio HiFi)
 - [ ] Extend species.yaml schema with `ploidy: int` and `subgenome_assignments: list[str]` fields
   - *N. gracilis*: ploidy=10, subgenome_assignments=["A","B","C","D","E"]
   - *D. capensis*: ploidy=12

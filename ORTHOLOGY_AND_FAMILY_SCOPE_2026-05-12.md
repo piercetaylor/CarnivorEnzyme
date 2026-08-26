@@ -26,7 +26,7 @@ Of the five Tier 1 families, **four are homologous across lineages and one is no
 
 ### Why neprosins are different
 
-Tiew & Goh 2022 (*Plant Physiology and Biochemistry* 183:23, doi:10.1016/j.plaphy.2022.04.027) characterized neprosins as **the only plant glutamic peptidases**, found exclusively in *Nepenthes*. The crystal structures (7ZVA, 7ZVB, 7ZVC, 7ZU8; Del Amo-Maestro 2022, *Nat. Commun.* 13:4446) are from *Nepenthes* × *ventrata*.
+Ting et al. 2022 (*Plant Physiology and Biochemistry* 183:23-35, doi:10.1016/j.plaphy.2022.04.027; [CORRECTED 2026-08-24 — previously misattributed as "Tiew & Goh 2022," see `audit/03_merops_restructure_and_neprosin_rescope.md`]) characterized neprosins as founding a new plant glutamic peptidase family, found exclusively in *Nepenthes*. The crystal structures (7ZVA, 7ZVB, 7ZVC, 7ZU8; Del Amo-Maestro 2022, *Nat. Commun.* 13:4446) are from *Nepenthes* × *ventrata*.
 
 The original Fukushima 2017 (*Nat. Ecol. Evol.* 1:0059) convergence paper **did not analyze neprosins** for cross-lineage convergence — precisely because no orthologs exist in *Drosera*, *Dionaea*, *Cephalotus*, *Sarracenia*, *Utricularia*, *Pinguicula*, or *Byblis*. The Fukushima analysis covered chitinases, aspartic proteases, RNase T2, PAPs, and a few other widely-conserved families.
 
@@ -142,8 +142,8 @@ This step exists implicitly as a manual test gate in Phase 2 (see [PROGRESS.md](
 ## 8. Sources
 
 - Fukushima K et al. (2017) Genome of the pitcher plant *Cephalotus* reveals genetic changes associated with carnivory. *Nat. Ecol. Evol.* 1:0059
-- Tiew TY, Goh HH (2022) Neprosin belongs to a new family of glutamic peptidase based on in silico evidence. *Plant Physiol. Biochem.* 183:23. doi:10.1016/j.plaphy.2022.04.027
+- Ting TY, Baharin A, Ramzi AB, Ng CL, Goh HH (2022) Neprosin belongs to a new family of glutamic peptidase based on in silico evidence. *Plant Physiol. Biochem.* 183:23-35. doi:10.1016/j.plaphy.2022.04.027 [CORRECTED 2026-08-24 — previously misattributed as "Tiew TY, Goh HH... 183:23"; see `audit/03_merops_restructure_and_neprosin_rescope.md`]
 - Del Amo-Maestro L et al. (2022) Molecular and in vivo studies of a glutamate-class prolyl-endopeptidase for coeliac disease therapy. *Nat. Commun.* 13:4446 [PDB 7ZVA-C]
 - Athauda SBP et al. (2004) Enzymic and structural characterization of nepenthesin. *Biochem. J.* 381:295 [A1B AP characterization]
 - Butts CT, Bierma JC, Martin RW (2016) Novel proteases from the genome of *Drosera capensis*. *Proteins* 84:1517 [A1B in *Drosera*]
-- Tiew & Goh 2022 — explicitly states "neprosin family is unique to *Nepenthes*"
+- Ting et al. 2022 — explicitly states neprosin family is unique to *Nepenthes*
