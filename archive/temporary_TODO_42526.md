@@ -1,3 +1,7 @@
+> **ARCHIVED 2026-08-25.** The manual-retrieval tasks here are carried forward, unchanged, into
+> `TODO.md` (Tier 3) at the repo root — that's the current reference. Preserved here for the
+> detailed step-by-step commands.
+
 # Manual TODOs — CarnivorEnzyme (April 2026)
 
 These cannot be resolved by writing code — they require manual data retrieval or
