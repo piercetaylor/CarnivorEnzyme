@@ -1,3 +1,7 @@
+> **ARCHIVED 2026-08-25.** Superseded by `TODO.md` at the repo root. Preserved for history — do not
+> treat as current (Tier 0-pre's HPC-verification blocker was carried forward into the new TODO.md
+> Tier 0; everything else here predates the 2026-08-25 method-stack decisions).
+
 # CarnivorEnzyme — Tasks
 
 > Date: 2026-05-12

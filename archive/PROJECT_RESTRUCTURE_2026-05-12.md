@@ -1,3 +1,7 @@
+> **ARCHIVED 2026-08-25.** The open decisions in §8 of this document were resolved on 2026-08-25 —
+> see `PROJECT_PLAN.md` §2 at the repo root for the resolutions and rationale. Preserved for
+> history — do not treat the proposals here as current or as still-open.
+
 # CarnivorEnzyme — Project Restructure
 
 > Date: 2026-05-12
