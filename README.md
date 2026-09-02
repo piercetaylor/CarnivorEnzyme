@@ -2,7 +2,7 @@
 
 A reproducible Snakemake pipeline testing whether **convergent amino acid substitutions in carnivorous plant digestive enzymes track adaptation to pitcher fluid pH**, and whether the evolutionary trajectory of those substitutions is dominated by **stability-function tradeoff, functional gain, or neutral drift**.
 
-> Current status: restructured (May 2026). See [PROJECT_RESTRUCTURE_2026-05-12.md](PROJECT_RESTRUCTURE_2026-05-12.md) for the question-driven reorganization, [ENZYME_EVOLUTION_PAPER_STRUCTURE.md](ENZYME_EVOLUTION_PAPER_STRUCTURE.md) for the published-paper template this mirrors, [STATUS_2026-05-12.md](STATUS_2026-05-12.md) for project state, and [TASKS.md](TASKS.md) for the active work plan.
+> Current status: see [PROJECT_STATUS.md](PROJECT_STATUS.md) for what is built vs. stubbed, [PROJECT_PLAN.md](PROJECT_PLAN.md) for the method-stack decision record, and [TODO.md](TODO.md) for the gated backlog. The May-2026 documents this README used to link are superseded and now live in [archive/](archive/); the current stability/pH method stack is set by [audit/15_stability_predictor_audit.md](audit/15_stability_predictor_audit.md).
 
 ---
 
@@ -133,7 +133,7 @@ The IQ-TREE marginal ancestral state reconstruction (.state file) is parsed to r
 
 Each convergent substitution is characterized by **two orthogonal axes**:
 
-- **Structural stability (X-axis):** FoldX 5.1 (Botte et al. 2025) computes folding free energy change (ΔΔG) using the revised 2025 force field with explicit pH-dependent protonation, run at pH 2.5, 3.5, and 5.0 — matching the range of pitcher fluid acidity across species.
+- **Structural stability (X-axis):** FoldX 5.1 (Delgado et al. 2025) computes folding free energy change (ΔΔG), cross-checked against RaSP (Blaabjerg et al. 2023) for sensitivity to predicted backbones. Reported as a **within-family rank**, not per-site kcal/mol — at surface positions, where the convergent substitutions sit, the measured dynamic range is smaller than the tool's own error bar (see `audit/15_stability_predictor_audit.md`). A pH sweep is retained only as a labelled supplementary check.
 - **Evolutionary constraint (Y-axis):** ProSST and SaProt LLR for each convergent substitution. For deep-MSA families, EVE/EVcouplings ΔΔE provides an MSA-based check.
 
 The **FoldX × ProSST scatter plot per family** (5 panels in Fig. 5 of the manuscript) is the primary novel analytical figure. Each convergent site is classified mechanistically (functional_gain, stability_function_tradeoff, neutral_drift, deleterious).
@@ -146,7 +146,7 @@ Sites in the `functional_gain` or `stability_function_tradeoff` quadrant with Pr
 
 ### Phase 5E — Constant-pH MD
 
-**GROMACS native λ-dynamics CpHMD** (phbuilder setup; Gapsys et al. 2022, *JCTC*) determines whether convergent substitutions shift the protonation equilibrium of nearby titratable residues (Asp, Glu, His, Lys, Cys, Tyr) at pitcher fluid pH values. This addresses the adaptation of active-site chemistry to the highly acidic secretion environment — a question uniquely relevant to carnivorous plant enzymes.
+**Exploratory only as of 2026-09-01.** GROMACS λ-dynamics CpHMD (Aho et al. 2022; phbuilder, Jansen et al. 2024) gives protonation fractions at titratable residues. It is not the project's pH axis: the implementation is an unreleased fork whose README asks users not to publish from it, three pH points cannot produce a pKa, and Fukushima 2017 reports the convergent positions do not cluster near catalytic residues. The pH claim is carried by Phase 6 electrostatics instead.
 
 ### Downstream analyses (Phases 6–8)
 
@@ -239,8 +239,9 @@ snakemake --use-conda phase2 --executor slurm --profile config/slurm/
 - Su J et al. (2024) SaProt: Protein language modeling with structure-aware vocabulary. *ICLR 2024*
 - Frazer J et al. (2021) Disease variant prediction with deep generative models of evolutionary data (EVE). *Nature* 599:91
 - Stiffler MA et al. (2025) Language models reveal a complex sequence basis for adaptive convergent evolution of protein functions. *PNAS* doi:10.1073/pnas.2418254122
-- Botte M et al. (2025) FoldX force field revision with pH dependency. *Bioinformatics* 41:btaf064
-- Gapsys V et al. (2022) GROMACS native constant-pH MD (λ-dynamics). *JCTC* 18:6320
+- Delgado J, Reche R, Cianferoni D, et al. (2025) FoldX force field revisited, an improved version. *Bioinformatics* 41(2):btaf064
+- Blaabjerg LM, Kassem MM, Good LL, et al. (2023) Rapid protein stability prediction using deep learning representations (RaSP). *eLife* 12:e82593
+- Aho N, Buslaev P, Jansen A, Bauer P, Groenhof G, Hess B (2022) Scalable constant pH molecular dynamics in GROMACS. *JCTC* 18(10):6148–6160
 - Gapsys V et al. (2015) pmx: alchemical perturbations. *JCTC* 11:4494
 - Hopf TA et al. (2017) Mutation effects from sequence co-variation (EVmutation/EVcouplings). *Nat. Biotechnol.* 35:128
 

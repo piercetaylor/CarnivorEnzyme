@@ -1,3 +1,7 @@
+> **ARCHIVED 2026-09-01.** Superseded by `audit/15_stability_predictor_audit.md`.
+> Contains fabricated/misattributed citations (FoldX 2025 revision credited to a nonexistent "Botte et al."; SPURS credited to "Cai"; PypKa DOI gkae412 belongs to a different paper) and benchmark numbers that could not be reproduced from the primary sources.
+> Preserved for history — do not treat as current.
+
 # FoldX vs Alternatives — Literature Findings
 
 > Date: 2026-05-12

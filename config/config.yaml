@@ -42,11 +42,37 @@ structure:
   tm_score_chai1_threshold: 0.85      # Test Gate 4: Chai-1 threshold
 
 foldx:
+  # Primary stability predictor (reinstated 2026-09-01; see audit/15_stability_predictor_audit.md).
   repair_rounds: 5
   temperature: 298
-  ph_values: [2.5, 3.5, 5.0]         # NEW: pH sweep using FoldX 4.1/5.1 pH-dependent force field
-  ddg_destabilizing: 1.0
-  ddg_stabilizing: -0.5
+  # Single reference pH for the primary result. 7.0 is where the force field is parameterised and
+  # validated; the 2025 revision's pH module was NOT statistically significant on its own
+  # validation set (P = .373) and was validated on one histidine in one protein.
+  reference_ph: 7.0
+  # Supplementary sensitivity check ONLY — never a headline result, never a figure axis.
+  # Measured on 7ZVA, the pH 2.5 -> 5.0 shift at exposed sites averages 0.12 kcal/mol against a
+  # tool RMSE of 1.25, i.e. ~10x below the error bar. See audit/15 section 1.1.
+  supplementary_ph_sweep: [2.5, 3.5, 5.0]
+  # Absolute kcal/mol thresholds are meaningful for BURIED positions only. At exposed positions --
+  # where the convergent substitutions are (Fukushima 2017) -- all 43 tested mutations fell inside
+  # +/-1.6 kcal/mol, so thresholding labels essentially every convergent site "neutral".
+  # Downstream classification must use within-family percentile rank instead (see rank_percentiles).
+  ddg_destabilizing: 1.0      # buried-site interpretation only
+  ddg_stabilizing: -0.5       # buried-site interpretation only
+  # Percentile cutoffs on the within-family ddG rank, fixed before inspecting which sites are
+  # convergent. These drive the quadrant classification.
+  rank_percentiles:
+    destabilizing_above: 80
+    stabilizing_below: 20
+
+rasp:
+  # Structure-sensitivity cross-check on FoldX (added 2026-09-01). RaSP is the only ddG tool with
+  # published crystal-vs-AlphaFold concordance (rho-bar 0.94 vs 0.97 crystal-to-crystal), which is
+  # precisely the axis FoldX is weakest on (Rollo et al. 2023).
+  enabled: true
+  # Minimum Spearman rank correlation between FoldX and RaSP within a family. Below this, report
+  # the disagreement as uncertainty -- do not pick a winner.
+  min_rank_agreement: 0.5
 
 evcouplings:
   min_neff: 500           # Minimum effective sequences for reliable DCA
@@ -58,8 +84,16 @@ docking:
   box_padding: 10
 
 electrostatics:
+  # PROMOTED 2026-09-01 to the project's PRIMARY pH axis (audit/15 section 5). This is what
+  # Fukushima 2017's own reading of its convergent sites points to -- surface-exposed, not near
+  # catalytic residues, changing "interactions with other molecules in solution" -- and it matches
+  # the published mechanism of acid adaptation (Fushinobu et al. 1998; Ohara et al. 2014).
   ph_values: [2.5, 3.5, 5.0]
   grid_spacing: 0.5
+  # PROPKA via PDB2PQR is retained. The proposed PypKa swap was dropped: PypKa RMSE 1.07 vs PROPKA
+  # 1.11 vs 1.09 for assuming the solution pKa -- a 0.04 pH unit difference is not an upgrade.
+  # Report PROPKA's real error: 0.79 pH units for Asp/Glu overall, 1.37 for BURIED carboxylates.
+  pka_method: propka
 
 hellbender:
   login: "hellbender-login.rnet.missouri.edu"
@@ -105,7 +139,13 @@ cphmd:
   production_ns: 50               # Production MD per replica (100 ns total per variant)
   ph_exchange_attempts: 100       # MC pH swap attempts per step (phbuilder default)
   titratable_residues: ["ASP", "GLU", "HIS", "LYS", "CYS", "TYR"]
-  # Run only on convergent sites classified as "functional" or "tradeoff" by FoldX×EVmutation
+  # DOWNGRADED 2026-09-01 to exploratory (audit/15 section 3.3): constant-pH MD is not in any
+  # released GROMACS through 2026.1, only in a fork of GROMACS 2021 whose README asks researchers
+  # to avoid publishing results from it; and 3 pH values cannot yield a pKa (the developers' own
+  # titrations used 15-21). Treat output as a case study, not a headline result. The project's pH
+  # claim lives in the electrostatics block below.
+  exploratory_only: true
+  # Gated on the FoldX-rank x evolutionary-constraint quadrant.
   run_on_quadrants: ["functional_gain", "stability_function_tradeoff"]
 
 fep:

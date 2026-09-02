@@ -1,3 +1,7 @@
+> **ARCHIVED 2026-09-01.** Superseded by `audit/15_stability_predictor_audit.md`.
+> Stale on the origin count ("nine") and contradicts PROJECT_PLAN.md §2 on CpHMD (it calls CpHMD/FEP/QM-MM over-engineered; PROJECT_PLAN made CpHMD the sole pH axis). Its two live findings — missing dN/dS selection tests and missing PGLS — are carried forward into the 2026-09-01 audit and TODO.md.
+> Preserved for history — do not treat as current.
+
 # Enzyme Evolution Paper Structure — Reference Template
 
 > Date: 2026-05-12

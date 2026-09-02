@@ -1,3 +1,7 @@
+> **ARCHIVED 2026-09-01.** Superseded by `audit/15_stability_predictor_audit.md`.
+> Built on the stale "9 independent origins" count, corrected to 5 origin groups on 2026-08-22 (see config/species.yaml and audit/02).
+> Preserved for history — do not treat as current.
+
 # Manuscript Framing Review — Has This Question Been Posed?
 
 > Date: 2026-05-12

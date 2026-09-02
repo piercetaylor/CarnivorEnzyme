@@ -1,6 +1,6 @@
 # CarnivorEnzyme — Project Status
 
-> Date: 2026-08-26
+> Date: 2026-08-26 (method-stack rows revised 2026-09-01 — see `audit/15_stability_predictor_audit.md`)
 > Supersedes: `STATUS_2026-05-12.md` (archived, see `archive/STATUS_2026-05-12.md`)
 > Companion documents: [PROJECT_PLAN.md](PROJECT_PLAN.md), [TODO.md](TODO.md)
 > **This is a snapshot, not a living document.** It should be regenerated (not hand-patched into
@@ -40,20 +40,30 @@ independently-evolved carnivorous plant lineages. As of this snapshot:
 | Axis | Tool | Status |
 |------|------|--------|
 | Structure prediction | AlphaFold3 (primary) / Chai-1 (fallback) / Boltz-2 (RNA-protein) | Config wired (`config.yaml structure:`); scripts are stubs |
-| Stability ΔΔG | **SPURS** (Li & Luo, *Nat Commun* 17:891, 2025/2026) — AF-native, single axis | **Not yet built** — `score_spurs.py` doesn't exist yet; `run_foldx_*.py` stubs are slated for removal, not completion |
+| Stability ΔΔG | **FoldX 5.1** (Delgado et al. 2025) primary + **RaSP** (Blaabjerg et al. 2023) cross-check; SPURS (Li & Luo 2025) optional, not sole | **Not yet built** — `run_foldx_*.py` stubs are to be **completed, not deleted** (reversed 2026-09-01); `score_rasp.py` to be added. FoldX 5.1 is licensed and installed |
 | Evolutionary fitness | **ProSST** (primary) + **SaProt** (secondary); ESM-2 retained as Tier-3 sanity baseline only | ESM-2 baseline implemented (`score_esm2.py`); ProSST/SaProt scripts don't exist yet, and need Foldseek 3Di tokens from a predicted structure — **hard-blocked on Phase 3 landing first** |
 | Evolutionary coupling (DCA) | **EVE** (Frazer et al. 2021) | Stub scripts currently target EVmutation/EVcouplings (`run_evcouplings.py`, `run_evmutation.py`) — need renaming/rebuilding for EVE, not yet done |
-| pH-dependent structural physics | **CpHMD** (GROMACS λ-dynamics via phbuilder) | Implemented (`run_cphmd.py`, `parse_cphmd.py`) — this is now the pipeline's *only* pH-resolved stability signal, since FoldX (the prior pH axis) is being dropped |
+| pH-dependent physics | **Electrostatics** (PDB2PQR + PROPKA + APBS) is the primary pH axis as of 2026-09-01; CpHMD is exploratory only | Electrostatics is a **stub** (`run_electrostatics.py`) and is now on the critical path. CpHMD is implemented but downgraded: it runs only on an unreleased GROMACS fork whose README asks users not to publish from it, and 3 pH points cannot yield a pKa |
 | Binding free energy | Alchemical FEP (GROMACS + pmx) | Implemented (`run_fep.py`, `parse_fep.py`) |
 | QM/MM | ORCA 6 + GROMACS | Implemented, gated off by default (`config.qmmm.enabled: false`) |
 
-**FoldX is being removed from the pipeline entirely**, including from what was CLAUDE.md's Test
-Gate 4 (crystal-vs-prediction ΔΔG correlation check). See [PROJECT_PLAN.md](PROJECT_PLAN.md) §2
-for the full rationale (SPURS is the newest peer-reviewed AF-native method; FoldX's pH-awareness
-is real but redundant with CpHMD, which is already implemented and more rigorous; FoldX's own
-general-ΔΔG benchmark is weak, PCC ~0.40–0.71 depending on dataset).
+**FoldX is reinstated as the primary stability predictor** (reversed 2026-09-01; it had been slated
+for removal on 2026-08-25). The reversal rests on three verified findings: FoldX is the one
+predictor published as retaining correlation at *surface* residues, which is where Fukushima 2017
+places the convergent substitutions; CpHMD computes protonated fractions and pKa, not folding free
+energy, so it never was a substitute; and the benchmark figure used to justify the removal
+("PCC ~0.40 on Megascale per MAVISp's March 2026 evaluation") does not exist in any source. The
+stability axis is also re-scoped from thresholded kcal/mol to within-family rank, because direct
+measurement on 7ZVA shows the thresholds are degenerate at surface sites. See
+[audit/15_stability_predictor_audit.md](audit/15_stability_predictor_audit.md) and
+[PROJECT_PLAN.md](PROJECT_PLAN.md) §2.2.
 
----
+**Several citations in this repo are fabricated.** The 2025 FoldX revision is attributed throughout
+CLAUDE.md and README.md to a nonexistent "Botte et al." (real: Delgado J, Reche R, Cianferoni D,
+et al., *Bioinformatics* 41(2):btaf064); both GROMACS CpHMD references are invented, sharing one
+bogus page number; and the archived May-2026 docs invent authors for SPURS and JanusDDG. In every
+case the DOI is right and the author name is wrong — the signature of citations assembled from
+search snippets. A Crossref sweep of all remaining citations is TODO Tier 1.
 
 ## 3. Phase-by-phase implementation table
 
@@ -66,7 +76,7 @@ Verified by direct inspection (line counts, not stub-template detection) on 2026
 | 3A — Evolutionary triage | `score_esm2.py` (269 ln) | **Implemented** (baseline only, post-decision) | `esm2.smk` — implemented; will be renamed `plm_scoring.smk` under TODO Tier 1 |
 | 3 — Structure prediction | `predict_chai1.py`, `predict_af3.py`, `assess_structure.py`, `classify_positions.py` | **Stub** (`NotImplementedError` only) | `predict_structure.smk`, `structural_align.smk` — stub |
 | 4A — Ancestral structure | `extract_ancestor.py` (269 ln), `compare_ancestor_modern.py` (218 ln) | **Implemented** — but `extract_ancestor.py` has the same node-naming-fallback pattern class just fixed in `detect_convergence.py`, not yet audited | `ancestral_structure.smk` — implemented |
-| 4 — Stability ΔΔG | `run_foldx_repair.py`, `run_foldx_scan.py`, `parse_foldx.py` | **Stub — and slated for removal, not completion** (SPURS replaces this phase; see §2) | `foldx.smk` — stub, will not be filled in |
+| 4 — Stability ΔΔG | `run_foldx_repair.py`, `run_foldx_scan.py`, `parse_foldx.py` | **Stub — to be completed** (reversed 2026-09-01: no longer slated for removal). `score_rasp.py` to be added | `foldx.smk` — stub, to be filled in |
 | DCA / evolutionary coupling | `run_evcouplings.py`, `run_evmutation.py`, `compare_foldx_evmutation.py` | **Stub — targets the wrong tool** (needs EVE rename/rebuild) | `evmutation.smk` — stub |
 | 5 — Docking | `prepare_docking.py`, `run_docking.py`, `parse_docking.py` | **Stub** | `docking.smk` — stub |
 | 5D — FEP | `run_fep.py` (294 ln), `parse_fep.py` (246 ln) | **Implemented** | `fep.smk` — implemented |
@@ -117,7 +127,7 @@ not exist yet. See [TODO.md](TODO.md) Tier 4.
 
 ## 6. Documentation hygiene
 
-- **Audit trail:** 14 numbered docs + `CHANGELOG.md` under `audit/`, covering the 2026-08-22
+- **Audit trail:** 15 numbered docs + `CHANGELOG.md` under `audit/`, covering the 2026-08-22
   (T1–T4) and 2026-08-24 (T5–T14) bug-fix/hardening/correction campaign. That work fixed silent
   zero-output failure modes in `detect_convergence.py`, `fetch_sequences.py`, and
   `04_run_hmmer_scan.sh`, plus taxonomic corrections (carnivory-origin count 3→1, MEROPS codes,
@@ -130,6 +140,18 @@ not exist yet. See [TODO.md](TODO.md) Tier 4.
   it's explicitly gitignored (`.gitignore:111`, the same convention CLAUDE.md itself uses) and was
   never tracked, so it's treated as scratch/local by repo convention; it's superseded in spirit by
   this document but wasn't moved into version control to respect that convention.
+- **Second archival pass, 2026-09-01.** Six more root-level docs moved to `archive/` with
+  superseded-by headers: `FOLDX_REVIEW_2026-05-12.md`, `FOLDX_ALTERNATIVES_AF3_2026-05-12.md`,
+  `LITERATURE_REVIEW_2026-05-12.md`, `MANUSCRIPT_FRAMING_2026-05-12.md`,
+  `ORTHOLOGY_AND_FAMILY_SCOPE_2026-05-12.md`, `ENZYME_EVOLUTION_PAPER_STRUCTURE.md`. The first two
+  contain fabricated citations; the rest were stale on the Aug-22 origin-count correction or
+  contradicted PROJECT_PLAN.md on the method stack. Root is now AGENTS.md, CLAUDE.md, PROGRESS.md
+  (gitignored), PROJECT_PLAN.md, PROJECT_STATUS.md, README.md, TODO.md. **Two live findings were
+  carried forward** out of `ENZYME_EVOLUTION_PAPER_STRUCTURE.md` rather than lost with it: the
+  project has no dN/dS selection analysis and no PGLS phenotype correlation, both of which
+  reviewers in this field expect (TODO.md T1.2d).
+- **AGENTS.md is stale** — its status snapshot still says "As of April 2026… all 24 scripts are
+  stubs", which PROJECT_STATUS.md §3 contradicts. Flagged, not rewritten.
 - **README.md** still links to the old doc set and has its own known drift (e.g., a stale "nine
   independent lineage origins" reference) — out of scope for this documentation pass, but tracked
   as a follow-up in [TODO.md](TODO.md) Tier 0.5.

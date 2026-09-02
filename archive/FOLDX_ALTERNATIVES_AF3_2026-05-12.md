@@ -1,3 +1,7 @@
+> **ARCHIVED 2026-09-01.** Superseded by `audit/15_stability_predictor_audit.md`.
+> Same citation defects as FOLDX_REVIEW (SPURS credited to "Cao et al., Nat Commun 16"; CatOpt credited to "Wang et al."), and its four-axis stability-ensemble recommendation is rejected by the 2026-09-01 audit.
+> Preserved for history — do not treat as current.
+
 # FoldX Alternatives for AF3-Predicted Structures — Targeted Literature Review
 
 > Date: 2026-05-12

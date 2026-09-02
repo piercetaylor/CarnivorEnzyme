@@ -1,6 +1,6 @@
 # CarnivorEnzyme — Project Plan
 
-> Date: 2026-08-26
+> Date: 2026-08-26 (§2.2 and §4 revised 2026-09-01 — see `audit/15_stability_predictor_audit.md`)
 > Supersedes: `PROJECT_RESTRUCTURE_2026-05-12.md` (archived, see `archive/PROJECT_RESTRUCTURE_2026-05-12.md`)
 > Companion documents: [PROJECT_STATUS.md](PROJECT_STATUS.md), [TODO.md](TODO.md)
 >
@@ -29,7 +29,7 @@ CLAUDE.md's tool table has not yet caught up to.
 
 ---
 
-## 2. Method-stack decisions (resolved 2026-08-25)
+## 2. Method-stack decisions (resolved 2026-08-25; §2.2 reversed 2026-09-01)
 
 CLAUDE.md's own addendum instructs: "This project must not become a confirmation loop... every
 method choice must be challenged against alternatives." The addendum already did this once (FoldX
@@ -44,38 +44,105 @@ No wet-lab collaboration outreach. Target venue tier: MBE/GBE, fully computation
 the fastest path to a submittable preprint and removes the external-dependency risk a wet-lab
 partnership would add. (Old TASKS.md T4.1 — wet-lab outreach — is dropped, not carried forward.)
 
-### 2.2 Stability ΔΔG: SPURS only, FoldX dropped entirely
+### 2.2 Stability ΔΔG: FoldX primary + RaSP cross-check (REVISED 2026-09-01)
 
-**Decision:** SPURS (Li & Luo, *Nat. Commun.* 17:891, 2025/2026) becomes the sole protein-stability
-predictor. FoldX is removed from the pipeline — not run in production, not kept as a benchmark
-check, not swept across pH.
+> **This section was rewritten on 2026-09-01.** The prior decision — "SPURS only, FoldX dropped
+> entirely" — is **reversed**. See `audit/15_stability_predictor_audit.md` for the full evidence,
+> including first-hand FoldX 5.1 runs on the 7ZVA crystal and two independent citation-verification
+> passes. The superseded reasoning is preserved at the end of this section.
 
-**Why not stack FoldX + a second DL predictor (SPURS or RaSP), which was the original
-`PROJECT_RESTRUCTURE_2026-05-12.md` proposal?** The user's own instinct was that a single
-well-chosen axis beats an ensemble here, which prompted two rounds of research:
+**Decision:** **FoldX 5.1** is the primary stability predictor, **RaSP** is the single cross-check,
+and **SPURS** is optional and never sole. Stability is reported as a within-family **rank**, not as
+per-site kcal/mol against fixed thresholds. The pH sweep is demoted from a headline result to a
+labelled supplementary sensitivity check, and the **pH claim moves to Phase 6 electrostatics**.
 
-- **Round 1 (predictor choice):** compared SPURS, ThermoMPNN, RaSP, CatOpt, ddGUn3D, and two
-  January-2026 preprints (GraphESMStable, ProStab-Former) on recency, peer-review status,
-  AF-native training, and benchmark correlation. SPURS is the newest *peer-reviewed*, AF-native
-  method (Pearson/Spearman correlations of 0.54–0.83 depending on benchmark set) with a real
-  citation trail (19 citations as of Aug 2026). GraphESMStable/ProStab-Former report higher raw
-  numbers but are unreviewed, zero-citation preprints 4–7 weeks old — not reviewer-defensible yet.
-  **Correction to this repo's own prior docs:** `FOLDX_ALTERNATIVES_AF3_2026-05-12.md` and
-  `FOLDX_REVIEW_2026-05-12.md` mis-cite SPURS as "Cao et al." — the correct citation is Li & Luo.
-- **Round 2 (does dropping FoldX lose something real?):** FoldX's pH-dependent ΔΔG (the 4.1/5.1
-  revision, Botte et al. 2025) is genuinely structure-specific — it computes an
-  environmentally-corrected pKa per titratable residue from local electrostatics and burial, not a
-  generic per-amino-acid formula. But it's answering the same question CpHMD (already implemented,
-  Phase 5E) answers with a fundamentally more rigorous method — explicit λ-dynamics MD vs. FoldX's
-  static empirical correction. Given FoldX's own general-ΔΔG benchmark is weak and inconsistent
-  (PCC ~0.40 on Megascale per MAVISp's March 2026 evaluation, up to ~0.71 depending on dataset) and
-  it has no dedicated pH-specific validation set, keeping it *specifically for the pH sweep* adds
-  less unique value than it appears. **CpHMD becomes the pipeline's sole pH-dependent stability
-  signal.**
+**Why FoldX comes back:**
+
+- **It is the one predictor that holds up at surface residues**, which is where this project's
+  substitutions are. Pancotti et al. 2022 (*Brief Bioinform* 23(2):bbab555, the S669 benchmark
+  across 21 predictors with an RSA split): "Most predictors (even sequence-based) show much lower
+  Pearson correlations on surface residues, **with the exception of FoldX**." Zheng et al. 2024
+  (*Protein Sci* 33(1)) confirm every method is worse at exposed than buried sites.
+- **Its counter-argument is real and is why RaSP joins it.** Rollo et al. 2023 (*Genes* 14:2228)
+  found FoldX degrades measurably on *modelled* backbones — and this pipeline feeds it AF3
+  predictions. RaSP is the only tool with published crystal-vs-AlphaFold concordance
+  (ρ̄ = 0.94, against 0.97 crystal-to-crystal; Blaabjerg et al. 2023). Where the two disagree,
+  report uncertainty; there is no basis to pick a winner.
+- **It is already licensed and installed** (FoldX 5.1, verified 2026-09-01), so the reinstatement
+  costs integration work only.
+
+**Why SPURS is demoted, not dropped:** SPURS is real, peer-reviewed and strong (Li & Luo 2025,
+*Nat Commun* 17:891 — that citation was correct; the May docs' "Cao"/"Cai" attributions are
+fabricated author names). But the reason it was made *sole* axis does not survive checking: the
+paper uses AlphaFold structures **only as a fallback where no PDB ID exists** and reports **no
+experimental-vs-AF ablation**, so "AF-native by design" overstates it. It also has no pH input, is
+trained on ≤72-residue domains, and has 15 citations.
+
+**Why the ensemble stays rejected.** The instinct that one well-chosen axis beats a stack was
+right, and it still holds — but for a sharper reason than recency. These predictors share training
+data (ProTherm, S2648, VariBench, Megascale) and a documented directional bias toward destabilizing
+predictions (Usmanova et al. 2018 measure FoldX at **+0.74 kcal/mol** by the self-consistency test;
+Pucci et al. 2018 and Fang 2020 find the same). Agreement between them measures the shared bias,
+not the truth. RaSP is added as a cross-check on *structure sensitivity*, a failure mode FoldX has
+and RaSP demonstrably does not — not as a second vote.
+
+**What the ΔΔG axis may and may not claim.** Direct measurement on 7ZVA (87 mutations, buried and
+exposed, FoldX 5.1) gives mean |ΔΔG| of **6.1–7.1 kcal/mol at buried positions but 0.39–0.42 at
+exposed ones**, with 0 of 43 exposed mutations exceeding the published ±2.9 kcal/mol 95 % prediction
+interval and 2 of 43 exceeding the 1.25 kcal/mol RMSE. Against `config.yaml`'s
+`ddg_destabilizing: 1.0`, every buried site classifies as destabilizing and essentially every
+surface site as neutral — the axis is degenerate at the sites of interest. Hence: **ranked output,
+distributions across families, no per-site kcal/mol claims at surface positions.**
+
+**Why the pH sweep is demoted.** Two independent reasons, one documentary and one measured:
+
+- The FoldX pH module was introduced in v6 **bundled with pi–pi stacking**, and the paper states
+  "The Wilcoxon signed-rank test of v5 and v6 for the VFSD is not statistically significant
+  (P = .373)." Its entire validation is one figure: barnase His18→Ala — one mutation, one protein,
+  a *histidine*. There is no acidic-pH validation set and no published valid pH range.
+- Measured on 7ZVA, the **pH 2.5 → 5.0 shift at exposed sites averages 0.12 kcal/mol** (max 0.50);
+  none of 43 mutations clears the tool's own RMSE. The planned Fig. 3 / H1 effect is ~10× smaller
+  than the error bar.
+
+**Why CpHMD cannot absorb the pH claim** (the load-bearing assumption of the superseded decision):
+constant-pH MD is in **no released GROMACS** through 2026.1 — it is a fork of GROMACS 2021 whose
+README asks researchers to avoid publishing results from it; three pH points cannot produce a pKa
+(the developers' own titrations used 15–21); the budget is underscoped 8–17×; and on the directly
+relevant case, Hofer et al. 2020 missed HIV-1 protease's lower catalytic-dyad pKa by 3.6–4.2 pH
+units. Beyond feasibility, the substitution was a category error: `parse_cphmd.py` emits protonated
+fractions and pKa, FoldX emits folding free energy. Neither replaces the other.
+
+**Where the pH claim goes instead:** Phase 6 electrostatics (PDB2PQR + PROPKA + APBS at pH 2.5 vs
+5.0), promoted from deprioritised stub to primary pH axis. This is what Fukushima 2017's own
+interpretation points to — convergent positions are surface-exposed, do not cluster near catalytic
+residues, and are read as changing "interactions with other molecules in solution, rather than
+changing protein conformation" — and it matches the published mechanism of acid adaptation
+(Fushinobu et al. 1998; Ohara et al. 2014: acidic residues concentrated on the surface, negative
+potential around the active site).
 
 **Consequence:** the old Phase 4 (`run_foldx_repair.py`, `run_foldx_scan.py`, `parse_foldx.py`,
-`foldx.smk`) is not completed — it's replaced. `config.yaml`'s `foldx:` block is removed; a
-`spurs:` block is added. CLAUDE.md's Method Justification Table FoldX row is replaced with SPURS.
+`foldx.smk`) is **completed, not deleted**. `config.yaml` keeps a `foldx:` block with a single
+reference pH; `score_rasp.py` is added; a `spurs:` block is optional. CLAUDE.md's Method
+Justification Table keeps FoldX with a corrected citation and honest limitations.
+
+<details>
+<summary>Superseded reasoning (2026-08-25) — preserved for the record</summary>
+
+The 2026-08-25 decision made SPURS the sole stability predictor and removed FoldX entirely, on two
+grounds: (a) SPURS is the newest peer-reviewed AF-native method, and (b) FoldX's pH-dependent ΔΔG
+is redundant with CpHMD, which is "more rigorous." It also cited FoldX at "PCC ~0.40 on Megascale
+per MAVISp's March 2026 evaluation."
+
+All three load-bearing claims failed verification. (a) SPURS is not AF-native in the sense claimed —
+AF structures are a fallback, with no ablation. (b) CpHMD and FoldX compute different observables,
+and the GROMACS CpHMD implementation cannot deliver a publishable pKa as configured. (c) There is no
+March-2026 MAVISp release, MAVISp has never benchmarked FoldX against Tsuboyama, and 0.40 appears in
+no source; the real figures are r ≈ 0.30–0.31 per protein and ρ = 0.45 pooled (Elwes et al. 2026).
+
+The decision was made in good faith on documents that turned out to contain fabricated citations —
+the FoldX revision was attributed throughout to a nonexistent "Botte et al." (real: Delgado et al.
+2025), and both GROMACS CpHMD references were invented.
+</details>
 
 ### 2.3 Evolutionary fitness: ProSST (primary) + SaProt (secondary), ESM-2 demoted to baseline
 
@@ -103,11 +170,24 @@ carries over unchanged (same MSA-depth requirement applies to EVE).
 
 ### 2.5 Quadrant classification, re-derived on the new axes
 
-The primary novel analytical output (see §5) is now **SPURS ΔΔG × (ProSST/SaProt LLR, informed by
-EVE ΔΔE for deep-MSA families)**, not the old FoldX × EVmutation pairing. `compare_foldx_evmutation.py`
-is renamed `compare_spurs_eve.py`; quadrant thresholds need re-deriving against SPURS's score scale
-(SPURS does not report kcal/mol the way FoldX does — TODO.md Tier 1 flags this as a concrete
-open sub-task, not something to assume carries over numerically).
+The primary novel analytical output (see §5) is **FoldX ΔΔG × (ProSST/SaProt LLR, informed by EVE
+ΔΔE for deep-MSA families)**, with RaSP shown alongside FoldX as a structure-sensitivity
+cross-check. `compare_foldx_evmutation.py` is renamed `compare_stability_evolution.py`.
+
+**The stability axis is a within-family percentile rank, not thresholded kcal/mol** (revised
+2026-09-01). The old quadrant assumed a meaningful destabilizing/neutral/stabilizing split at
+1.0 / −0.5 kcal/mol. Direct measurement shows that split is degenerate at surface positions, where
+this project's substitutions are: all 43 exposed-site mutations tested on 7ZVA fall within
+±1.6 kcal/mol, mean |ΔΔG| 0.40, against a tool RMSE of 1.25 and a 95 % prediction interval of ±2.9
+(`audit/15_stability_predictor_audit.md` §1). Thresholding would label essentially every convergent
+site "neutral" and every buried control "destabilizing", which is an artefact of burial, not a
+finding about convergence.
+
+Ranking sidesteps this: it asks "is this substitution unusually costly *relative to other
+substitutions in this family*", which the tool can support, rather than "does it cross an absolute
+kcal/mol boundary", which it cannot at these sites. Quadrant boundaries are therefore set at
+within-family percentiles, fixed before looking at which sites are convergent — TODO.md Tier 1
+carries the concrete sub-task.
 
 ---
 
@@ -136,14 +216,14 @@ Phase numbering follows CLAUDE.md §7, with the tool substitutions from §2 abov
 | 3A | Evolutionary fitness triage | **New gate:** ProSST LLR positive for ≥4/6 known Fukushima 2017 GH19 convergent positions (same bar the old ESM-2-only gate used). Hard-blocked on Phase 3 landing (needs Foldseek 3Di tokens from a predicted structure). |
 | 3 | Structure prediction | Unchanged — AF3 vs. 7ZVA TM-score >0.90 (Chai-1 fallback >0.85), CLAUDE.md Test Gate 3 |
 | 4A | Ancestral structure | Unchanged — MRCA <30% identity to any single modern sequence, TM-score >0.70 vs. modern ortholog, CLAUDE.md Test Gate 3B. **Also gated on the `extract_ancestor.py` node-naming audit in TODO.md Tier 0.** |
-| 4 | Stability ΔΔG | **New gate, replaces old FoldX Test Gate 4:** SPURS ΔΔG on a held-out structure (e.g. neprosin AF3 prediction) should be directionally consistent with literature-known stabilizing/destabilizing mutations at ≥3 test positions — exact quantitative correlation threshold needs picking once SPURS is actually run once (TODO.md Tier 1 sub-task; SPURS's score scale differs from FoldX's kcal/mol, so the old "r > 0.65" threshold doesn't transfer directly) |
+| 4 | Stability ΔΔG | **Revised 2026-09-01.** FoldX 5.1 primary + RaSP cross-check. Gate: (a) FoldX ΔΔG on the 7ZVA crystal vs. the AF3 neprosin prediction must correlate at r > 0.6 across matched positions — the original Test Gate 4, reinstated; (b) FoldX and RaSP rank-correlate at ρ > 0.5 within a family, with disagreement reported rather than resolved. Output is a within-family **rank**, not thresholded kcal/mol — the 1.0/−0.5 cutoffs are degenerate at surface sites (audit/15 §1) |
 | DCA | EVE scoring | **New gate, replaces EVmutation sign check:** negative ΔΔE for known pathogenic/deleterious mutations in a well-studied homolog, Neff ≥ 500 gate unchanged |
 | 5 | Docking | Unchanged — PQPQLPYP into neprosin 7ZVC active-site cleft, CLAUDE.md Test Gate 5 |
 | 5D | FEP | Unchanged — CLAUDE.md Test Gate 5D |
-| 5E | CpHMD | Unchanged — CLAUDE.md Test Gate 5E. **Now also the pipeline's sole pH-resolved stability signal (see §2.2) — its output carries more analytical weight than before.** |
-| 6 | Electrostatics | Unchanged |
+| 5E | CpHMD | **Downgraded 2026-09-01 to exploratory.** It is *not* the pipeline's pH signal. Blocked on: the GROMACS constant-pH fork's own "do not publish from this version" caveat being resolved, and a titration budget with ≥10 pH points (3 cannot yield a pKa). Until then it produces protonated fractions for a case study, not a headline result (audit/15 §3.3) |
+| 6 | Electrostatics | **Promoted 2026-09-01 to the primary pH axis.** PDB2PQR + PROPKA + APBS at pH 2.5 vs. 5.0. Gate: surface-charge / active-site potential differences across orthologs are computable and directionally interpretable for ≥1 Tier-1 family. This carries the acid-adaptation claim that FoldX's pH sweep and CpHMD cannot (audit/15 §5) |
 | 7 | Expression | Unchanged |
-| 8 | Integration | Fig. 5 (quadrant scatter) becomes SPURS × ProSST/SaProt/EVE, not FoldX × EVmutation — figure-generation logic in `generate_figures.py` needs to reflect this when built |
+| 8 | Integration | Fig. 5 (quadrant scatter) becomes **FoldX rank × ProSST/SaProt/EVE**, with RaSP rank shown as the cross-check. `generate_figures.py` must plot percentile rank on the stability axis, not kcal/mol |
 
 ---
 
@@ -182,7 +262,7 @@ CLAUDE.md addendum §D §1–4) are unaffected by the method-stack pivot and rem
 
 - Tier 2 families (cysteine proteases, TLPs, GH17, LTPs, esterases) stay deferred until Tier 1 is
   validated end-to-end — unchanged from CLAUDE.md §3.
-- FEP scope: capped at ≤20 priority sites total, gated on the SPURS×ProSST/EVE quadrant
+- FEP scope: capped at ≤20 priority sites total, gated on the FoldX×ProSST/EVE quadrant
   (`functional_gain` / `stability_function_tradeoff`) rather than the old FoldX×EVmutation gate.
   The numeric cap (20) carries over from the old T0.3 proposal, but the gating *quadrant labels*
   now come from the new axes — re-verify the cap is still sane once real quadrant data exists

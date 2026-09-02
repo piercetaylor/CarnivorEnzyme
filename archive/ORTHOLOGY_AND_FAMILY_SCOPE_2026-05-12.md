@@ -1,3 +1,7 @@
+> **ARCHIVED 2026-09-01.** Superseded by `audit/15_stability_predictor_audit.md`.
+> Superseded by the family restructure in audit/03 and audit/04 and by CLAUDE.md §3, which the Aug-22 corrections made authoritative.
+> Preserved for history — do not treat as current.
+
 # Orthology, Homology, and the Neprosin Exception
 
 > Date: 2026-05-12
