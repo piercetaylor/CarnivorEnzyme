@@ -4,7 +4,7 @@ Two rules per family:
   1. align_family   — MAFFT L-INS-i (--localpair --maxiterate 1000)
   2. trim_alignment — trimAl -automated1 (removes columns >50% gaps)
 
-Input:  results/sequences/{family}/combined.fa  (from retrieve.smk)
+Input:  results/family_fasta/{family}.combined.fa  (from retrieve.smk)
 Output: results/alignments/{family}.trimmed.fa  (used by phylogeny.smk)
 
 Tool justification (CLAUDE.md §1):
@@ -21,7 +21,7 @@ rule align_family:
     Appropriate because each family has <100 sequences.
     """
     input:
-        fasta="results/sequences/{family}/combined.fa",
+        fasta="results/family_fasta/{family}.combined.fa",
     output:
         aligned="results/alignments/{family}.aligned.fa",
     conda:

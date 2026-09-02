@@ -480,3 +480,83 @@ Hellbender run. Also surfaced a pre-existing, unrelated `ChildIOException` in `r
 currently blocks any full-workflow Snakemake run; left unfixed and flagged for follow-up.
 
 See audit/11_ancestral_reconstruction_architecture_fix.md
+
+---
+
+## 15 — Stability predictor audit (2026-09-01)
+
+Audited the ΔΔG/stability axis against the literature and against first-hand execution. **Reversed
+the 2026-08-25 "SPURS only, FoldX dropped entirely" decision** (PROJECT_PLAN.md §2.2): FoldX 5.1 is
+reinstated as the primary stability predictor with RaSP as a single structure-sensitivity
+cross-check, SPURS demoted to optional, the stability axis re-scoped from thresholded kcal/mol to
+within-family percentile rank, the FoldX pH sweep demoted to a supplementary check, CpHMD downgraded
+to exploratory, and Phase 6 electrostatics promoted to the project's primary pH axis. Cut CatOpt,
+EpHod, the PypKa-for-PROPKA swap, and the multi-predictor "consensus ensemble" outright.
+
+Verified by execution, not documentation reading: FoldX 5.1 (installed locally) was run end-to-end
+on 7ZVA chain A — RepairPDB, then PositionScan over 87 mutations at 16 positions stratified by
+Shrake–Rupley relative SASA into buried/exposed × titratable/non-titratable, at pH 2.5, 5.0 and 7.0.
+Result: mean |ΔΔG| is 6.1–7.1 kcal/mol at buried positions but **0.39–0.42 at exposed positions**,
+with 0/43 exposed mutations exceeding the published ±2.9 kcal/mol 95% prediction interval and 2/43
+exceeding the 1.25 kcal/mol RMSE — so `config.yaml`'s 1.0 kcal/mol threshold is degenerate at
+exactly the sites Fukushima 2017 reports the convergent substitutions occupy. The pH sweep fares
+worse: the pH 2.5 → 5.0 shift at exposed sites averages **0.12 kcal/mol** (max 0.50), ~10× below the
+tool's own RMSE, none of 43 clearing it.
+
+Also established from the primary text that Fukushima et al. 2017 already reported the convergent
+positions "do not overlap with or cluster around catalytically essential amino acids… they tend to
+be located at exposed positions… likely to change their interactions with other molecules in
+solution, **rather than changing protein conformation**" — i.e. the source paper describes the
+observable ΔΔG-of-folding does not measure, and points instead at surface electrostatics.
+
+Two independent citation-verification passes found **five fabricated references** in the doc set:
+"Botte et al." (FoldX 2025 — real: Delgado, Reche, Cianferoni et al.), "Cai" and "Cao" (SPURS — real:
+Li & Luo), "Ressa" (JanusDDG — real: Barducci et al.), and two invented GROMACS CpHMD references
+sharing one bogus page number (JCTC 18:6320, actually an unrelated IDP-dynamics paper). In every
+case the DOI was correct and the author invented. Also corrected: the "MAVISp March 2026 / FoldX PCC
+0.40 on Megascale" claim exists in no source; CLAUDE.md's 0.711/1.238 FoldX figures describe a
+median-of-five-runs protocol, not the force-field revision; GROMACS constant-pH MD is not in any
+release through 2026.1 and its fork's README asks users not to publish from it.
+
+Six superseded root-level docs moved to `archive/` with headers. NOT verified: nothing was run on
+Hellbender or on AF3-predicted structures — the SASA-stratified scan used the 7ZVA crystal, and the
+same check must be repeated on real AF3 output once Phase 3 lands (TODO T1.2).
+
+See audit/15_stability_predictor_audit.md
+
+---
+
+## 16 — Snakemake DAG ChildIOException fix (2026-09-02)
+
+Cleared TODO T0.2, the last local blocker in front of the Hellbender Tier 0 verification run.
+`retrieve.smk` declared `fetch_all_sequences` → `directory("results/sequences/")` and
+`combine_family_sequences` → `results/sequences/{family}/combined.fa`; Snakemake rejects a DAG where
+one rule's output is a child of another's, so **every dry run past Phase 1 aborted before scheduling
+a single job**. Fixed by moving the derived concatenation out of the checkpoint's subtree to
+`results/family_fasta/{family}.combined.fa`.
+
+Second defect found and fixed in the same pass: `esm2.smk` declared an input
+`results/sequences/{family}/all_sequences.fa` that **no rule in the workflow produces** — the file
+`combine_family_sequences` actually writes is `combined.fa`. Phase 3A would have failed with
+MissingInputException the moment the ChildIOException stopped masking it.
+
+Third defect found and **deliberately left unfixed**: `snakemake -n` with no target resolves to
+`rule phase1` (Snakefile:83), not `rule all` (Snakefile:141), because Snakemake uses the first rule
+in the file. The Snakefile's own usage docstring claims the bare invocation runs the full pipeline;
+it downloads sequences and exits 0. Changing a workflow's default target is a behavioural decision,
+so it was filed as TODO T0.5.5 rather than folded into a bugfix.
+
+Verified by execution, not inspection (Snakemake 9.25.2): the T0.1 target now builds an 8-job DAG in
+the correct order — fetch → combine → align → trim → infer_tree → root_tree →
+ancestral_reconstruction → detect_convergence, the exact four-rule Phase-2 chain audit/11 depends on.
+`phase2` 26 jobs, `phase3a` 34 jobs, `phase1` 2 jobs, all clean. `phase4a`, `phase5d` and `all` now
+fail only on `results/structures/` and `results/atlas/*` from the stubbed `predict_structure.smk`
+and `integrate.smk` — expected until Tier 2. 13/13 tests still pass.
+
+NOT verified: nothing ran on Hellbender, and no job was executed at all — `-n` builds the DAG and
+says nothing about whether fetch_sequences.py, MAFFT or IQ-TREE succeed on real input. Also noted
+for the cluster run: the dry run schedules `fetch_all_sequences` to re-run on an mtime trigger from
+`config/enzyme_families.yaml`, so an rsynced `results/sequences/` needs `snakemake --touch` first or
+NCBI access on the compute node.
+
+See audit/16_snakemake_dag_childio_fix.md

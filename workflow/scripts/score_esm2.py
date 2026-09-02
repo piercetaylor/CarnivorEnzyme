@@ -16,7 +16,7 @@ classification framework.
 Reads:
   --convergent  results/convergence/{family}.convergent_sites.tsv
                 Columns: alignment_position, ancestral_aa, derived_aa, species_list
-  --sequences   results/sequences/{family}/all_sequences.fa
+  --sequences   results/family_fasta/{family}.combined.fa
                 All unique sequences in the family (used to derive sequence context)
 
 Writes:

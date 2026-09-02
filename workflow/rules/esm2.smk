@@ -13,7 +13,7 @@ expensive downstream analyses (CpHMD, FEP).
 
 Input:
   results/convergence/{family}.convergent_sites.tsv  (from convergence.smk)
-  results/sequences/{family}/all_sequences.fa         (concatenated per-family FASTA)
+  results/family_fasta/{family}.combined.fa           (concatenated per-family FASTA)
 
 Output:
   results/esm2/{family}.esm2_scores.tsv
@@ -34,7 +34,7 @@ rule score_esm2:
     """
     input:
         convergent="results/convergence/{family}.convergent_sites.tsv",
-        sequences="results/sequences/{family}/all_sequences.fa",
+        sequences="results/family_fasta/{family}.combined.fa",
     output:
         tsv="results/esm2/{family}.esm2_scores.tsv",
     params:

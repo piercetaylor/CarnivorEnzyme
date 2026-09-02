@@ -53,12 +53,18 @@ output with no error = fail, re-open `audit/11_ancestral_reconstruction_architec
 **Effort:** ~2 hours
 **Entry condition:** none
 
-- [ ] In `workflow/rules/retrieve.smk`, `fetch_all_sequences`'s output (`results/sequences/`) is an
+- [x] In `workflow/rules/retrieve.smk`, `fetch_all_sequences`'s output (`results/sequences/`) is an
       ancestor directory of `combine_family_sequences`'s output — restructure one of the two rules'
-      output paths so neither is a parent of the other
+      output paths so neither is a parent of the other (2026-09-02: `combined.fa` moved to
+      `results/family_fasta/{family}.combined.fa`; see `audit/16_snakemake_dag_childio_fix.md`)
+- [x] Also fixed in the same pass: `esm2.smk` declared an input `all_sequences.fa` that **no rule
+      produces**, which would have broken `phase3a` as soon as the ChildIOException stopped masking
+      it. Repointed to the same combined FASTA (2026-09-02)
 
 **Verification:** `snakemake -n` (dry run) targeting any rule past Phase 1 no longer raises
-`ChildIOException`.
+`ChildIOException`. **Done 2026-09-02** — verified by execution against every phase target: the
+T0.1 target builds an 8-job DAG in the correct order, `phase2` 26 jobs, `phase3a` 34 jobs;
+`phase4a`/`phase5d`/`all` now fail only on stub rules, as expected. 13/13 tests still pass.
 **Pass/fail:** Dry run reaches the DAG-construction stage without this specific error. (Later
 stages may still fail on stub rules — that's expected until Tier 2 closes, not this task's
 concern.)
@@ -122,48 +128,117 @@ files themselves (links to each other within `archive/` are fine to leave as-is)
 **Verification:** grep README.md for "nine independent" and for links to archived filenames —
 both should return nothing.
 
+### T0.5.5 — Make `rule all` the default Snakemake target (NEW 2026-09-02)
+**Owner:** Claude Code | **Effort:** 15 min
+Surfaced while verifying T0.2. `snakemake -n` with no target resolves to **`rule phase1`**, not
+`rule all` — Snakemake takes the first rule in the file, and `phase1` is at Snakefile:83 while `all`
+is at Snakefile:141. The Snakefile's own usage docstring says `snakemake --use-conda --cores 8`
+runs the full pipeline; it does not, it downloads sequences and exits 0. Left unfixed deliberately —
+changing the workflow's default target is a behavioural decision, not part of a DAG bugfix.
+- [ ] Either move `rule all` above the phase targets, or add `default_target: True` to it
+- [ ] Reconcile the Snakefile usage docstring with whichever is chosen
+**Verification:** `snakemake -n` with no target builds the full-pipeline DAG (or fails on stub
+rules), not a 2-job Phase 1 DAG.
+
 **Ledger:** - [ ] Tier 0.5 complete
 
 ---
 
-## Tier 1 — Method-stack migration (encodes the 2026-08-25 decisions)
+## Tier 1 — Method-stack migration (2026-08-25 decisions, as revised 2026-09-01)
+
+> **T1.1 and T1.2 were rewritten on 2026-09-01.** The stability half of the 2026-08-25 decision was
+> reversed by `audit/15_stability_predictor_audit.md`: FoldX is reinstated as primary with RaSP as a
+> cross-check, SPURS is demoted to optional, and the pH claim moves to Phase 6 electrostatics. The
+> evolutionary-axis decisions (T1.3–T1.5, ProSST/SaProt/EVE) are unaffected.
 
 **Dependency for the whole tier:** Tier 0 complete (don't migrate tooling on top of an unverified
 pipeline core).
 
-### T1.1 — Update CLAUDE.md's Method Justification Table
+### T1.1 — Correct CLAUDE.md's Method Justification Table (REVISED 2026-09-01)
 **Owner:** Claude Code | **Effort:** ~2 hours
-- [ ] Replace the FoldX row with SPURS (Li & Luo, *Nat. Commun.* 17:891, 2025/2026 — correct
-      citation, not "Cao et al." as this repo's own prior docs had it)
+- [x] FoldX row rewritten: correct citation (Delgado et al. 2025, not the fabricated "Botte et al."),
+      corrected numbers (R 0.693 → 0.706, RMSE 1.252 — the 0.711/1.238 figures describe the
+      median-of-five-runs protocol, not the force-field revision), and honest limitations
+- [x] RaSP row added as the structure-sensitivity cross-check
+- [x] CpHMD row corrected: real citations (Aho et al. 2022; Buslaev et al. 2022; Jansen et al. 2024),
+      and the false "native / GROMACS 2024.2 / conda-installable" claims removed
 - [ ] Replace the ESM-2 row with ProSST (primary) + SaProt (secondary) + ESM-2 (Tier-3 baseline)
 - [ ] Replace the EVmutation/EVcouplings row with EVE (Frazer et al. 2021)
-- [ ] Update the "Known Limitations" column for each new row based on PROJECT_PLAN.md §2's
-      rationale (SPURS: no pH input; ProSST/SaProt: needs Foldseek 3Di tokens, hard-blocked on
-      Phase 3; EVE: same Neff≥500 gate as before)
+- [ ] Update CLAUDE.md §7 Phase 4 and Phase 5E test gates to match PROJECT_PLAN.md §4
+- [ ] Rewrite addendum §A/§B — they still argue the FoldX×EVmutation quadrant with kcal/mol
+      thresholds; the stability axis is now a within-family rank (PROJECT_PLAN.md §2.5)
 - [ ] Revise addendum §D's novelty claim to the tightened version in PROJECT_PLAN.md §5
 
-**Verification:** `grep -n "FoldX\|EVmutation\|EVcouplings" CLAUDE.md` — remaining hits should only
-be in explicitly-historical context (e.g., "previously used FoldX, replaced 2026-08-25"), not
-presented as current tooling.
-**Pass/fail:** No row in the Method Justification Table still names FoldX/EVmutation/EVcouplings as
-the active choice.
+**Verification:** `grep -n "Botte\|EVmutation\|EVcouplings" CLAUDE.md` — remaining hits only in
+explicitly-historical context.
+**Pass/fail:** No row in the table cites a fabricated author or presents a superseded tool as active.
 
-### T1.2 — Build `score_spurs.py` + `spurs.smk`
-**Owner:** Claude Code | **Dependency:** T1.1 | **Effort:** ~1 day
-- [ ] `workflow/envs/stability.yaml` with SPURS pip/conda deps
-- [ ] `workflow/scripts/score_spurs.py` — input: predicted structure (CIF/PDB) + convergent-sites
-      TSV; output: per-mutation ΔΔG-equivalent score, columns matching the existing FoldX-parse
-      output shape where reasonable so downstream comparison code doesn't need a full rewrite
-- [ ] `workflow/rules/spurs.smk`
-- [ ] Delete (not complete) `run_foldx_repair.py`, `run_foldx_scan.py`, `parse_foldx.py`,
-      `foldx.smk`, `workflow/envs/foldx.yaml`
-- [ ] Remove `config.yaml`'s `foldx:` block, add a `spurs:` block
+### T1.1b — Crossref sweep of every remaining citation (NEW 2026-09-01)
+**Owner:** Claude Code | **Effort:** ~half day | **Priority: do before any manuscript text exists**
+Five fabricated references have been found so far — "Botte et al." (FoldX), "Cai"/"Cao" (SPURS),
+"Ressa" (JanusDDG), and two invented GROMACS CpHMD refs sharing one bogus page number. In every case
+the DOI was correct and the author name was invented, which is the signature of citations assembled
+from search snippets rather than read. Assume the rest of the corpus has the same defect rate.
+- [ ] Extract every citation from `CLAUDE.md`, `README.md`, `PROJECT_PLAN.md` and `literature_review/`
+- [ ] Resolve each DOI against Crossref; flag any where the deposited first author does not match
+- [ ] Fix or delete every mismatch; record the sweep in `audit/`
 
-**Verification:** Run `score_spurs.py` against a real predicted structure once Phase 3 lands (see
-Tier 2 dependency below) — until then, verify it runs against the 7ZVA experimental crystal
-structure as a stand-in input.
-**Pass/fail:** New Test Gate from PROJECT_PLAN.md §4 (SPURS directionally consistent with ≥3 known
-stabilizing/destabilizing literature mutations).
+**Pass/fail:** Zero unresolved citations remain in the four locations above.
+
+### T1.2 — Complete the FoldX phase and add RaSP (REVISED 2026-09-01)
+**Owner:** Claude Code | **Dependency:** T1.1 | **Effort:** ~2 days
+> Reversal note: the prior version of this task said "Delete (not complete) `run_foldx_repair.py`,
+> `run_foldx_scan.py`, `parse_foldx.py`, `foldx.smk`, `workflow/envs/foldx.yaml`". **Do not delete
+> them — complete them.** FoldX 5.1 is licensed and installed.
+- [ ] Complete `run_foldx_repair.py` (RepairPDB, 5 rounds) and `run_foldx_scan.py` (PositionScan at
+      `config.foldx.reference_ph`), and fill in `foldx.smk` / `workflow/envs/foldx.yaml`
+- [ ] `parse_foldx.py` must emit **within-family percentile rank** alongside raw kcal/mol, and must
+      carry a per-position relative-SASA column so surface and buried sites are never pooled in a
+      figure or a summary statistic
+- [ ] Add the supplementary pH sweep behind `config.foldx.supplementary_ph_sweep`, clearly labelled
+      as a sensitivity check and excluded from main figures
+- [ ] `workflow/envs/stability.yaml` + `workflow/scripts/score_rasp.py` + `workflow/rules/rasp.smk`,
+      matching `parse_foldx.py`'s output shape so the two are directly rank-comparable
+- [ ] `score_spurs.py` remains optional; build it only after FoldX and RaSP are both landing results
+- [ ] Port the audit's scan harness (SASA-stratified position selection + pH comparison) into
+      `tests/` as a regression fixture, so the surface/buried degeneracy check is repeatable
+
+**Verification:** reinstated Test Gate 4 — FoldX ΔΔG on the 7ZVA crystal vs. the AF3 neprosin
+prediction must correlate at r > 0.6 across matched positions; and FoldX vs. RaSP rank correlation
+ρ > 0.5 within a family, with disagreement reported rather than resolved.
+**Pass/fail:** as stated. Note the audit already ran FoldX 5.1 end-to-end on 7ZVA chain A (RepairPDB
++ PositionScan, 87 mutations, three pH values), so the tool path itself is known to work.
+
+### T1.2b — Promote Phase 6 electrostatics to the primary pH axis (NEW 2026-09-01)
+**Owner:** Claude Code | **Dependency:** T2.1 (needs structures) | **Effort:** ~2 days
+The project's pH claim can be carried by neither the FoldX pH sweep (effect ~10× below the tool's
+error bar) nor CpHMD as configured (unreleased fork; 3 pH points cannot yield a pKa). Surface
+electrostatics is what Fukushima 2017's own interpretation and the acidophile-adaptation literature
+both point to.
+- [ ] Move `run_electrostatics.py` out of Tier 2 ordering into Tier 1 priority
+- [ ] PDB2PQR + PROPKA + APBS at pH 2.5 vs 5.0; report surface-charge distribution and
+      active-site electrostatic potential per ortholog
+- [ ] State PROPKA's real error in Methods: 0.79 pH units for Asp/Glu, **1.37 for buried carboxylates**
+- [ ] Do not adopt PypKa — it beats PROPKA by 0.04 pH units and beats doing nothing by 0.02
+
+**Verification:** surface potential differences are computable and directionally interpretable for
+≥1 Tier-1 family, and are reported against the *measured* pitcher-pH subset only.
+
+### T1.2c — Fix the phenotype table or downgrade the comparative claim (NEW 2026-09-01)
+**Owner:** Pierce | **Effort:** ~half day
+`config/species.yaml` has `pitcher_pH` for **9 of 30 species**, spanning 2.5–5.5, in 5
+`carnivory_origin` groups with four of the nine inside *Nepenthes*. A PGLS against pitcher pH is
+n ≈ 9 with heavy phylogenetic clustering.
+- [ ] Either expand the phenotype table from published sources (Adlassnig et al. 2011 is the
+      obvious candidate), or
+- [ ] Report the comparative analysis as descriptive, with no headline p-value
+
+### T1.2d — Carried-over gaps from the archived paper-structure doc (NEW 2026-09-01)
+`archive/ENZYME_EVOLUTION_PAPER_STRUCTURE.md` identified two analyses that reviewers in this field
+expect and that the project does not have. They survive the archival.
+- [ ] **dN/dS selection tests** — PAML codeml branch-site, or HyPhy aBSREL/BUSTED/RELAX. Requires a
+      nucleotide CDS retrieval path that does not currently exist
+- [ ] **PGLS phenotype correlation** — gated on T1.2c
 
 ### T1.3 — Build `score_prosst.py` + `score_saprot.py`
 **Owner:** Claude Code | **Dependency:** T1.1; hard-blocked on Phase 3 (Tier 2) for real execution, but the script itself can be written now | **Effort:** ~1 day
