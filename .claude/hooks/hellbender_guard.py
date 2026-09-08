@@ -68,6 +68,14 @@ THREAD_FLAGS = {
     "blastx": {"-num_threads"}, "tblastn": {"-num_threads"},
 }
 
+# Logins that are a service convention rather than a shared human account, so R3
+# does not apply: `git@github.com` authenticates with the caller's own SSH key.
+SERVICE_LOGINS = {"git", "hg", "svn", "aur"}
+FORGE_HOSTS = {
+    "github.com", "gitlab.com", "bitbucket.org", "codeberg.org",
+    "git.sr.ht", "ssh.github.com", "altssh.gitlab.com",
+}
+
 # --- R5: storage with no backup; destructive ops here need a human ---------
 PROTECTED_PREFIXES = [
     "/cluster/VAST/mendozacozatld-lab",
@@ -327,11 +335,20 @@ def main():
         if prog in ("ssh", "scp", "sftp", "rsync"):
             for tok in args:
                 m = re.match(r"^([A-Za-z0-9._-]+)@([A-Za-z0-9._-]+)", tok)
-                if m and user and m.group(1) != user:
-                    decide("deny", (
-                        f"Hellbender rule R3 (no account sharing): this command connects as "
-                        f"'{m.group(1)}@{m.group(2)}' but you are '{user}'. Use your own account."
-                    ))
+                if not (m and user) or m.group(1) == user:
+                    continue
+                login, host_part = m.group(1), m.group(2)
+                # Forge service accounts (git@github.com and friends) are a URL
+                # convention, not a shared human login -- authentication is still
+                # by the caller's own key. R3 is about people sharing UM accounts.
+                if login in SERVICE_LOGINS or host_part.lower() in FORGE_HOSTS:
+                    continue
+                decide("deny", (
+                    f"Hellbender rule R3 (no account sharing): this command connects as "
+                    f"'{login}@{host_part}' but you are '{user}'. Cluster policy states "
+                    "'Each user must use their own account to access RSS resources. "
+                    "Account sharing is prohibited.'"
+                ))
 
         # --- R1: no compute on the login node -------------------------------
         if on_login and prog in HEAVY_BINARIES and not informational:
