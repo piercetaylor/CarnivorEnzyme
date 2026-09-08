@@ -1,5 +1,13 @@
 # Pipeline outputs (large, reproducible)
-results/
+# NOTE: these ignore directory *contents* (`results/*`), not the directory itself
+# (`results/`). Git cannot re-include a file whose parent directory is excluded, so
+# the `!` lines below only work against the `/*` form.
+results/*
+# ...except the retrieved input sequences: 50 small FASTAs (~58 KB total) that are
+# expensive to re-fetch from NCBI, gate every downstream rule, and are the thing
+# that has to stay in sync between the laptop and Hellbender. Tracking them means
+# a clone is runnable without an rsync step (see audit/17).
+!results/sequences/
 resources/sequences/
 resources/expression/
 .snakemake/
@@ -34,8 +42,15 @@ desktop.ini
 *~
 
 # Claude Code / instruction files (keep locally, don't commit)
-.claude/
-CLAUDE.md
+.claude/*
+# ...except the Hellbender guardrails, which are cluster policy rather than personal
+# preference and must apply to every clone. Session state and personal overrides in
+# .claude/settings.local.json stay ignored by the explicit rule below.
+!.claude/settings.json
+!.claude/hooks/
+.claude/settings.local.json
+# CLAUDE.md is now tracked and is being unified into one scoped file across the
+# laptop and the cluster -- see PROJECT_STATUS.md before editing the laptop copy.
 CLAUDE.md.bak
 COPILOT.md
 AGENTS.md

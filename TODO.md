@@ -34,12 +34,68 @@ real alignments. Nothing downstream of Phase 2 is trustworthy until this closes.
 **Entry condition:** Hellbender SLURM access confirmed working (see Hellbender SSH policy in
 project memory — batch commands, don't SSH unprompted)
 
-- [ ] rsync current `config/` + `workflow/` to Hellbender
+- [x] rsync current `config/` + `workflow/` to Hellbender (2026-09-07: repo and 50 sequence FASTAs
+      in place at `/cluster/VAST/mendozacozatld-lab/PierceTaylor/CarnivorEnzyme`)
 - [ ] Run `phylogeny.smk` → `convergence.smk` for `chitinases_gh19_class_iv` (best-populated Tier-1
-      family)
-- [ ] Confirm the IQ-TREE binary name/flags actually match the Hellbender installation (`iqtree` vs
+      family) — **attempted 2026-09-07, FAILED at `ancestral_reconstruction`**; 5 of 7 rules
+      succeeded, target TSV not produced. See `audit/17_tier0_hellbender_verification.md`
+- [x] Confirm the IQ-TREE binary name/flags actually match the Hellbender installation (`iqtree` vs
       `iqtree2` vs `iqtree3` — `config.yaml phylogeny.binary` currently assumes `iqtree3`, verified
-      only against a local Windows 3.1.3 binary)
+      only against a local Windows 3.1.3 binary) (2026-09-07: **`iqtree3` is correct** — bioconda
+      installs IQ-TREE 3.1.3 as `iqtree3` with `iqtree` as a symlink; **no config change needed**)
+
+> **Halted 2026-09-07, not on infrastructure.** The four designated outgroup tips are not
+> monophyletic in the ML gene tree, so `run_ancestral.py` correctly refuses to write a tree it
+> cannot orient. The cause is paralogy: the alignment holds 18 sequences from 9 species, with
+> `Solanum_lycopersicum` sister to `Sarracenia_purpurea` and `Secale_cereale` sister to
+> `Dionaea_muscipula`. **`detect_convergence.py` never executed, so the `9b1a8c5` fix this task
+> exists to verify is still untested.**
+>
+> **Agreed direction (2026-09-07): stop, and re-frame toward recovering as many common ancestors
+> as possible for this gene tree** rather than forcing outgroup monophyly. This is defensible
+> because marginal ASR under a reversible model (WAG+G4 here) is root-independent, and
+> `detect_convergence.py` only ever needs each leaf's *direct parent* (`leaf.up`), never an MRCA.
+> The binding requirement is per-node state coverage, not orientation. Planned work is specified in
+> `audit/17_tier0_hellbender_verification.md` §6 and tracked as **T0.1a–T0.1c** below.
+
+### T0.1a — Quantify the recoverable ancestor set
+**Owner:** Claude Code · **Dependency:** none · **Effort:** ~2 h · **Entry condition:** none
+
+- [ ] Re-run `ancestral_reconstruction` with `--allow-outgroup-nonmonophyly`
+- [ ] Report a table: total internal nodes in `.asr.treefile`; how many resolve in `.asr.state`;
+      how many are the direct parent of ≥1 leaf; how many of those subtend ≥2 distinct
+      `carnivory_origin` values (the minimum for a call at `convergence.min_lineages: 2`)
+- [ ] Summarise per-node posterior distributions against `convergence.posterior_threshold: 0.8`
+
+**Verification:** the table exists in `audit/17_...md` and the node counts are reproducible from
+`.asr.state` by `workflow/scripts/validate_convergence_output.py`.
+**Pass/fail:** ≥1 leaf-parent node subtends two or more distinct carnivory origins. If zero, this
+gene tree cannot support a convergence call at all and T0.1b/c are moot.
+
+### T0.1b — Separate orientation from reconstruction in `run_ancestral.py`
+**Owner:** Claude Code · **Dependency:** T0.1a · **Effort:** ~half day
+
+- [ ] Reconstruct states regardless of outgroup monophyly, but mark the output tree as
+      "not outgroup-oriented" so a consumer needing polarity/MRCA fails loudly while
+      `detect_convergence` proceeds
+- [ ] Keep the current hard failure for any consumer that does need orientation
+
+**Verification:** `detect_convergence` runs to completion on a non-monophyletic outgroup set; a
+synthetic consumer requesting MRCA still raises.
+**Pass/fail:** no silent path exists in which a mis-oriented tree is used for polarity.
+
+### T0.1c — Report the *un*recoverable ancestors
+**Owner:** Claude Code · **Dependency:** T0.1a
+
+- [ ] List nodes excluded because all descendants share one origin, or posteriors fall below
+      threshold — this set is the honest limit of what this gene tree supports and belongs in the
+      eventual results
+
+> **Separate and still open:** the paralogy itself. Maximising ancestor recovery does not fix it —
+> a substitution shared between *paralogous* lineages is not evidence of convergent adaptation.
+> Family re-scoping to a true orthogroup (anticipated by
+> `archive/ORTHOLOGY_AND_FAMILY_SCOPE_2026-05-12.md`) remains separate work, and any convergence
+> numbers produced before it lands must be labelled provisional.
 
 **Verification:** `results/convergence/chitinases_gh19_class_iv.convergent_sites.tsv` exists and
 is non-empty.

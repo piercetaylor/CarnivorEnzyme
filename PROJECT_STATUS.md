@@ -1,12 +1,57 @@
 # CarnivorEnzyme — Project Status
 
-> Date: 2026-08-26 (method-stack rows revised 2026-09-01 — see `audit/15_stability_predictor_audit.md`)
+> Date: 2026-08-26 (method-stack rows revised 2026-09-01 — see `audit/15_stability_predictor_audit.md`;
+> first Hellbender run appended 2026-09-07 as §0 — see `audit/17_tier0_hellbender_verification.md`)
 > Supersedes: `STATUS_2026-05-12.md` (archived, see `archive/STATUS_2026-05-12.md`)
 > Companion documents: [PROJECT_PLAN.md](PROJECT_PLAN.md), [TODO.md](TODO.md)
 > **This is a snapshot, not a living document.** It should be regenerated (not hand-patched into
 > drift) at each major checkpoint — after a TODO.md tier closes, after an HPC run, after the
 > method-stack migration lands. If you're reading this more than a few weeks after the date above,
 > verify the phase/script table against the repo directly before trusting it.
+
+---
+
+## 0. First Hellbender run — 2026-09-07 (read this first)
+
+The phylogeny→convergence chain ran on Hellbender for the first time. **It did not pass.** Full
+detail in [audit/17_tier0_hellbender_verification.md](audit/17_tier0_hellbender_verification.md);
+the parts that change how you should read the rest of this document:
+
+- **T0.1 is still open.** 5 of 7 rules succeeded on real cluster software (MAFFT 7.525 → trimAl →
+  IQ-TREE 3.1.3 WAG+G4/1000 UFBoot → root_tree, 18 sequences × 268 columns) and the chain then
+  halted at `ancestral_reconstruction`. **`detect_convergence.py` never executed**, so the
+  `9b1a8c5` node-matching fix — the thing Tier 0 exists to verify — is *still* untested against
+  real data. §1's "top blocker" bullet remains accurate.
+- **`config.yaml`'s `phylogeny.binary: iqtree3` is confirmed correct** and needs no change.
+  Bioconda installs IQ-TREE 3.1.3 as `iqtree3` with `iqtree` as a symlink to it.
+- **The halt is a paralogy finding, not a bug.** The four designated outgroup tips are not
+  monophyletic in the gene tree — `Solanum_lycopersicum` sits sister to `Sarracenia_purpurea`,
+  `Secale_cereale` sister to the two `Dionaea_muscipula` sequences — because the alignment holds 18
+  sequences from only 9 species. `run_ancestral.py` refused to write a tree it could not orient,
+  which is the guard working as designed. Agreed direction is to re-frame toward **recovering as
+  many common ancestors as possible** (T0.1a–T0.1c in TODO.md) rather than forcing monophyly;
+  family re-scoping to a true orthogroup stays separate, still-open work.
+- **No pipeline logic was changed** by this run. New files are operational only: the SLURM driver
+  `workflow/scripts/run_snakemake.sbatch`, the pass-criteria validator
+  `workflow/scripts/validate_convergence_output.py`, `docs/HELLBENDER_RULES.md`, and `.claude/`
+  guardrail hooks.
+- **Running the pipeline on Hellbender needs setup the repo did not previously record.** The
+  cluster's own Snakemake module cannot submit to SLURM, and conda envs cannot be built on the lab
+  VAST share. See [docs/HELLBENDER_RULES.md](docs/HELLBENDER_RULES.md) before attempting a run.
+
+### Note for the laptop: `CLAUDE.md` is now tracked
+
+`CLAUDE.md` and `.claude/` were previously gitignored, so the laptop and the cluster each carried
+their own untracked copy. As of 2026-09-07 the ignore rules are relaxed: `CLAUDE.md`,
+`.claude/settings.json` and `.claude/hooks/` are **tracked**, and `results/sequences/` (50 FASTAs,
+~58 KB) is tracked too so a clone is runnable without an rsync.
+
+**Action needed on the laptop:** the cluster now has a `CLAUDE.md` scoped to *operating on
+Hellbender*. The laptop's copy holds the science rationale and the Method Justification Table. The
+intent is a **single unified, scoped `CLAUDE.md`** — merge the laptop's content in rather than
+letting `git pull` overwrite it or spawning a second divergent file. Pull carefully the first time.
+Note the Method Justification Table is stale on the FoldX / ESM-2 / EVmutation rows (§2), so the
+merge is a chance to fix that.
 
 ---
 

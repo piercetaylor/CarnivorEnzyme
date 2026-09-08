@@ -1,5 +1,40 @@
 # Audit Changelog
 
+## 2026-09-07 — T0.1: First Hellbender run of the phylogeny→convergence chain
+
+GATE FAILED — the target `results/convergence/chitinases_gh19_class_iv.convergent_sites.tsv` was
+not produced. Driver job 17171597 ran 5 of 7 rules successfully on real cluster software
+(combine → MAFFT 7.525 → trimAl → IQ-TREE 3.1.3 WAG+G4/1000 UFBoot → root_tree, 18 sequences ×
+268 columns) and then halted at `ancestral_reconstruction`: the four designated outgroup tips do
+not form a clade, so `run_ancestral.py` refused to write a tree it could not orient. That guard
+worked as designed. The cause is paralogy rather than rooting — `Solanum_lycopersicum` sits sister
+to `Sarracenia_purpurea`, `Secale_cereale` sister to the two `Dionaea_muscipula` sequences, and the
+alignment holds 18 sequences from only 9 species, so no species-level outgroup can be monophyletic.
+`--allow-outgroup-nonmonophyly` was deliberately NOT used during this run. Agreed direction
+(2026-09-07): stop here and re-frame the task toward **recovering as many common ancestors as
+possible** for this gene tree rather than forcing outgroup monophyly — defensible because marginal
+ASR under a reversible model (WAG+G4) is root-independent, and `detect_convergence.py` only needs
+each leaf's direct parent (`leaf.up`), never an MRCA. Tracked as new subtasks T0.1a–T0.1c. The
+paralogy remains a separate, still-open problem: a substitution shared between paralogous lineages
+is not evidence of convergent adaptation, so any numbers produced before family re-scoping are
+provisional.
+
+Verified along the way: `config.yaml`'s `phylogeny.binary: iqtree3` is correct (IQ-TREE 3.1.3;
+`iqtree` is a symlink to it) and needs no change; no `ChildIOException`, so the T0.2 fix holds on
+real data; 13/13 tests pass. NOT verified: `detect_convergence.py` never executed, so the `9b1a8c5`
+node-matching fix — the entire premise of T0.1 — remains untested against real data. The DAG is
+7 jobs, not 8: `fetch_all_sequences` is correctly skipped for staged sequences, so the prescribed
+`--touch` step is unnecessary (audit/16's closing note predicted the opposite).
+
+Three Hellbender blockers were fixed to get this far, none of them in the T0.1 prompt: the cluster
+snakemake module has no SLURM executor plugin (built `carnivor-smk` on pixstor); the lab VAST share
+is NFS and rejects `:` in filenames, so building the bioinfo env there died on perl's `App::Cpan.3`
+and rolled back silently behind a piped exit code (envs now go to pixstor via
+`SNAKEMAKE_CONDA_PREFIX`); and `module load` piped into another command no-ops in a subshell. All
+are documented in `docs/HELLBENDER_RULES.md` and enforced by `.claude/hooks/hellbender_guard.py`.
+
+See audit/17_tier0_hellbender_verification.md
+
 ## 2026-08-22 — T1: Fix detect_convergence.py species-metadata loader
 
 Fixed critical bug in `workflow/scripts/detect_convergence.py` where `_load_species_meta()` was reading from a non-existent `species:` key, always returning zero species and silently breaking convergence detection. Loader now correctly iterates both `carnivorous_species:` and `outgroup_species:` sections, infers `carnivorous` status from section membership, and produces a dict of 23 species (18 carnivorous + 5 outgroups).
